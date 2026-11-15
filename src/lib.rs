@@ -1,0 +1,9 @@
+pub mod app_scanner;
+pub mod config;
+pub mod hotkey;
+pub mod icon_extractor;
+pub mod launcher;
+pub mod model;
+pub mod tray;
+pub mod ui;
+pub mod wallpaper;
