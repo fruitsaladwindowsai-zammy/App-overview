@@ -1,8 +1,9 @@
-// Savanna User Interface - macOS Launchpad Aesthetic for Windows
+// Winscroller 2d Appview User Interface - macOS Launchpad Aesthetic for Windows
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 
 use egui::{
     pos2, vec2, Align2, Color32, ColorImage, FontId, Key, Rect, Rounding, Stroke, TextureHandle,
@@ -25,6 +26,9 @@ struct LoadedIcon {
 
 pub struct SavannaApp {
     pub config: Config,
+    config_path: PathBuf,
+    last_config_mtime: Option<SystemTime>,
+    last_config_check: Instant,
     pub all_apps: Vec<AppEntry>,
     pub filtered_apps: Vec<AppEntry>,
     pub search_query: String,
@@ -63,9 +67,13 @@ impl SavannaApp {
     pub fn new(
         cc: &eframe::CreationContext<'_>,
         config: Config,
+        config_path: PathBuf,
         tray_rx: Receiver<TrayCommand>,
         hotkey_rx: Receiver<GestureCommand>,
     ) -> Self {
+        let last_config_mtime = std::fs::metadata(&config_path)
+            .and_then(|m| m.modified())
+            .ok();
         let (icon_tx, icon_rx) = channel();
         let (wp_tx, wp_rx) = channel();
 
@@ -105,6 +113,9 @@ impl SavannaApp {
 
         Self {
             config,
+            config_path,
+            last_config_mtime,
+            last_config_check: Instant::now(),
             all_apps: apps,
             filtered_apps: filtered,
             search_query: String::new(),
@@ -194,12 +205,28 @@ impl SavannaApp {
                     self.toggle_visibility(ctx);
                 }
                 TrayCommand::Reload => {
+                    self.config = Config::load_from(&self.config_path);
+                    self.last_config_mtime = std::fs::metadata(&self.config_path)
+                        .and_then(|m| m.modified())
+                        .ok();
                     self.all_apps = scan_installed_apps();
                     self.filter_apps();
                 }
                 TrayCommand::Exit => {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                 }
+            }
+        }
+
+        // Automatic live reload when config.toml changes on disk
+        if self.last_config_check.elapsed().as_millis() >= 1500 {
+            self.last_config_check = Instant::now();
+            let current_mtime = std::fs::metadata(&self.config_path)
+                .and_then(|m| m.modified())
+                .ok();
+            if current_mtime.is_some() && current_mtime != self.last_config_mtime {
+                self.last_config_mtime = current_mtime;
+                self.config = Config::load_from(&self.config_path);
             }
         }
     }
@@ -521,19 +548,30 @@ impl eframe::App for SavannaApp {
         };
 
         // 3. Draw Blurred Wallpaper & Frosted Backdrop
-        if let Some(ref wp_tex) = self.wallpaper_texture {
-            painter.image(
-                wp_tex.id(),
-                screen_rect,
-                Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
-                Color32::from_rgba_unmultiplied(255, 255, 255, (255.0 * current_alpha) as u8),
-            );
+        let use_wallpaper = !self.config.backdrop.eq_ignore_ascii_case("Dark")
+            && !self.config.backdrop.eq_ignore_ascii_case("Solid");
+        if use_wallpaper {
+            if let Some(ref wp_tex) = self.wallpaper_texture {
+                painter.image(
+                    wp_tex.id(),
+                    screen_rect,
+                    Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                    Color32::from_rgba_unmultiplied(255, 255, 255, (255.0 * current_alpha) as u8),
+                );
+            } else {
+                // Dark gradient backdrop fallback
+                painter.rect_filled(
+                    screen_rect,
+                    Rounding::ZERO,
+                    Color32::from_rgba_unmultiplied(16, 20, 32, (240.0 * current_alpha) as u8),
+                );
+            }
         } else {
-            // Dark gradient backdrop fallback
+            // Solid / Dark obsidian backdrop mode
             painter.rect_filled(
                 screen_rect,
                 Rounding::ZERO,
-                Color32::from_rgba_unmultiplied(16, 20, 32, (240.0 * current_alpha) as u8),
+                Color32::from_rgba_unmultiplied(10, 14, 24, (246.0 * current_alpha) as u8),
             );
         }
 
@@ -587,7 +625,7 @@ impl eframe::App for SavannaApp {
 
         let is_searching = !self.search_query.is_empty();
 
-        if is_searching {
+        if is_searching && self.config.glow {
             let glow_rect = search_rect.expand(3.0);
             painter.rect_stroke(
                 glow_rect,

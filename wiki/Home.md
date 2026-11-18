@@ -1,3 +1,5 @@
+![Winscroller 2d Appview Brand Banner](assets/brand-banner.svg)
+
 # Welcome to the Winscroller 2d Appview Wiki
 
 **Winscroller 2d Appview** is a native Rust fullscreen & floating Launchpad-style 2D application overview for Windows 10 and Windows 11.

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.svg" alt="Winscroller 2d Appview Logo" width="56" />
+</p>
+
 ### [Winscroller 2d Appview](Home)
 
 **Getting Started**

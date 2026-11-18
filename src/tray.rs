@@ -1,21 +1,26 @@
-// Windows System Notification Tray
+// Windows System Notification Tray with Embedded Brand Icon
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
+use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Shell::{
     Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu, DestroyWindow,
-    DispatchMessageW, GetCursorPos, GetMessageW, LoadIconW, PostQuitMessage, RegisterClassW,
-    SetForegroundWindow, TrackPopupMenu, HICON, HMENU, IDI_APPLICATION, MF_SEPARATOR, MF_STRING,
-    MSG, TPM_BOTTOMALIGN, TPM_LEFTALIGN, WINDOW_EX_STYLE, WM_COMMAND, WM_DESTROY, WM_LBUTTONDBLCLK,
-    WM_LBUTTONUP, WM_RBUTTONUP, WM_USER, WNDCLASSW, WS_OVERLAPPED,
+    DispatchMessageW, GetCursorPos, GetMessageW, GetSystemMetrics, LoadIconW, LoadImageW,
+    PostQuitMessage, RegisterClassW, SetForegroundWindow, TrackPopupMenu, HICON, HMENU,
+    IDI_APPLICATION, IMAGE_ICON, LR_SHARED, MF_SEPARATOR, MF_STRING, MSG, SM_CXICON, SM_CXSMICON,
+    SM_CYICON, SM_CYSMICON, TPM_BOTTOMALIGN, TPM_LEFTALIGN, WINDOW_EX_STYLE, WM_COMMAND,
+    WM_DESTROY, WM_LBUTTONDBLCLK, WM_LBUTTONUP, WM_RBUTTONUP, WM_USER, WNDCLASSW, WS_OVERLAPPED,
 };
+
+pub const APP_ICON_RES_ID: usize = 1;
 
 const WM_TRAYICON: u32 = WM_USER + 101;
 const IDM_OPEN: usize = 1001;
@@ -30,6 +35,40 @@ pub enum TrayCommand {
     Exit,
 }
 
+struct TrayState {
+    sender: Sender<TrayCommand>,
+    hotkey_label: String,
+    config_path: PathBuf,
+}
+
+static TRAY_STATE: Mutex<Option<TrayState>> = Mutex::new(None);
+
+/// Loads the embedded Winscroller 2d Appview brand icon (`winscroller-2d-appview.ico` resource ID 1),
+/// falling back to the standard Windows application icon if unavailable.
+pub fn load_brand_icon(small: bool) -> HICON {
+    unsafe {
+        let hinst = GetModuleHandleW(PCWSTR::null()).unwrap_or_default();
+        let (cx, cy) = if small {
+            (GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON))
+        } else {
+            (GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON))
+        };
+        if let Ok(handle) = LoadImageW(
+            hinst,
+            PCWSTR(APP_ICON_RES_ID as *const u16),
+            IMAGE_ICON,
+            cx,
+            cy,
+            LR_SHARED,
+        ) {
+            if handle.0 != 0 {
+                return HICON(handle.0);
+            }
+        }
+        LoadIconW(None, IDI_APPLICATION).unwrap_or(HICON(0))
+    }
+}
+
 #[allow(dead_code)]
 pub struct TrayManager {
     running: Arc<AtomicBool>,
@@ -37,17 +76,21 @@ pub struct TrayManager {
 
 #[allow(dead_code)]
 impl TrayManager {
-    pub fn start(sender: Sender<TrayCommand>) -> Self {
+    pub fn start(sender: Sender<TrayCommand>, hotkey_label: String, config_path: PathBuf) -> Self {
         let running = Arc::new(AtomicBool::new(true));
         let running_clone = running.clone();
+
+        if let Ok(mut guard) = TRAY_STATE.lock() {
+            *guard = Some(TrayState {
+                sender,
+                hotkey_label,
+                config_path,
+            });
+        }
 
         thread::spawn(move || unsafe {
             let class_name: Vec<u16> = "WinscrollerTrayMsgClass\0".encode_utf16().collect();
             let window_name: Vec<u16> = "WinscrollerTrayWindow\0".encode_utf16().collect();
-
-            // Set up static callback storage for WndProc
-            static mut GLOBAL_SENDER: Option<Sender<TrayCommand>> = None;
-            GLOBAL_SENDER = Some(sender);
 
             unsafe extern "system" fn wnd_proc(
                 hwnd: HWND,
@@ -59,25 +102,34 @@ impl TrayManager {
                     WM_TRAYICON => {
                         let event = lparam.0 as u32;
                         if event == WM_LBUTTONUP || event == WM_LBUTTONDBLCLK {
-                            if let Some(ref s) = GLOBAL_SENDER {
-                                let _ = s.send(TrayCommand::Toggle);
+                            if let Ok(guard) = TRAY_STATE.lock() {
+                                if let Some(ref state) = *guard {
+                                    let _ = state.sender.send(TrayCommand::Toggle);
+                                }
                             }
                         } else if event == WM_RBUTTONUP {
                             let mut cursor = POINT::default();
                             let _ = GetCursorPos(&mut cursor);
 
+                            let hotkey = TRAY_STATE
+                                .lock()
+                                .ok()
+                                .and_then(|g| g.as_ref().map(|s| s.hotkey_label.clone()))
+                                .unwrap_or_else(|| "Alt+Space".to_string());
+
                             let menu = CreatePopupMenu();
                             if let Ok(hmenu) = menu {
                                 let open_title: Vec<u16> =
-                                    "🚀 Open Winscroller 2d Appview\tAlt+Space\0"
+                                    format!("Open Winscroller 2d Appview\t{hotkey}\0")
                                         .encode_utf16()
                                         .collect();
-                                let config_title: Vec<u16> =
-                                    "⚙ Edit Configuration\0".encode_utf16().collect();
+                                let config_title: Vec<u16> = "Edit Configuration (config.toml)\0"
+                                    .encode_utf16()
+                                    .collect();
                                 let reload_title: Vec<u16> =
-                                    "🔄 Reload Installed Apps\0".encode_utf16().collect();
+                                    "Reload Apps & Config\0".encode_utf16().collect();
                                 let exit_title: Vec<u16> =
-                                    "❌ Exit Winscroller 2d Appview\0".encode_utf16().collect();
+                                    "Exit Winscroller 2d Appview\0".encode_utf16().collect();
 
                                 let _ = AppendMenuW(
                                     hmenu,
@@ -123,25 +175,26 @@ impl TrayManager {
                     }
                     WM_COMMAND => {
                         let id = wparam.0 & 0xffff;
-                        if let Some(ref s) = GLOBAL_SENDER {
-                            match id {
-                                IDM_OPEN => {
-                                    let _ = s.send(TrayCommand::Toggle);
+                        if let Ok(guard) = TRAY_STATE.lock() {
+                            if let Some(ref state) = *guard {
+                                match id {
+                                    IDM_OPEN => {
+                                        let _ = state.sender.send(TrayCommand::Toggle);
+                                    }
+                                    IDM_SETTINGS => {
+                                        let _ = std::process::Command::new("notepad.exe")
+                                            .arg(&state.config_path)
+                                            .spawn();
+                                    }
+                                    IDM_RELOAD => {
+                                        let _ = state.sender.send(TrayCommand::Reload);
+                                    }
+                                    IDM_EXIT => {
+                                        let _ = state.sender.send(TrayCommand::Exit);
+                                        PostQuitMessage(0);
+                                    }
+                                    _ => {}
                                 }
-                                IDM_SETTINGS => {
-                                    let cfg_path = crate::config::Config::config_path();
-                                    let _ = std::process::Command::new("notepad.exe")
-                                        .arg(cfg_path)
-                                        .spawn();
-                                }
-                                IDM_RELOAD => {
-                                    let _ = s.send(TrayCommand::Reload);
-                                }
-                                IDM_EXIT => {
-                                    let _ = s.send(TrayCommand::Exit);
-                                    PostQuitMessage(0);
-                                }
-                                _ => {}
                             }
                         }
                         LRESULT(0)
@@ -177,10 +230,10 @@ impl TrayManager {
                 None,
             );
 
-            let icon: HICON = LoadIconW(None, IDI_APPLICATION).unwrap_or(HICON(0));
+            let icon: HICON = load_brand_icon(true);
 
             let mut tip = [0u16; 128];
-            let tip_str: Vec<u16> = "Winscroller 2d Appview\0".encode_utf16().collect();
+            let tip_str: Vec<u16> = "Winscroller 2d Appview — Active\0".encode_utf16().collect();
             for (i, c) in tip_str.iter().enumerate().take(127) {
                 tip[i] = *c;
             }

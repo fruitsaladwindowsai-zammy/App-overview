@@ -1,3 +1,5 @@
+![Winscroller 2d Appview Brand Banner](./assets/brand-banner.svg)
+
 # Introduction
 
 Welcome to the official documentation for **Winscroller 2d Appview** — a 100% native Rust Launchpad-style 2D application overview for Windows 10 and Windows 11.

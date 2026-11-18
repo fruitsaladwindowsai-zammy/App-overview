@@ -18,13 +18,16 @@ You can edit it quickly by right-clicking the **Winscroller 2d Appview** system 
 | `rows` | `usize` | `5` | `>= 2` | Number of app icon rows per page (`columns * rows` = items per page). |
 | `icon_size` | `f32` | `76.0` | `64.0` – `96.0` | Base logical icon dimension in pixels. Also controls the cached PNG icon extraction resolution. |
 | `show_labels` | `bool` | `true` | `true` / `false` | Shows truncated application names (`<= 18` chars) beneath each icon with contrast drop shadows. |
-| `backdrop` | `String` | `"Wallpaper"` | `"Wallpaper"`, `"Centered"` | Controls full frosted wallpaper overlay vs. centered floating card mode. |
+| `backdrop` | `String` | `"Wallpaper"` | `"Wallpaper"`, `"Centered"`, `"Dark"`, `"Solid"` | Controls full frosted wallpaper overlay, centered floating card, or solid obsidian backdrop. |
 | `centered` | `bool` | `false` | `true` / `false` | When `true`, displays a rounded floating dark glass card over the dimmed desktop wallpaper. |
 | `card_width` | `f32` | `0.75` | `0.40` – `0.95` | Fractional display width of the floating card when `centered = true`. |
 | `card_height` | `f32` | `0.80` | `0.40` – `0.95` | Fractional display height of the floating card when `centered = true`. |
 | `glow` | `bool` | `true` | `true` / `false` | Enables accent focus glow ring around the search pill when typing. |
 | `accent_color` | `String` | `"#89b4fa"` | `#RRGGBB` or `#RRGGBBAA` | Hex accent tint for search focus border, blinking caret, and active pagination pill. |
-| `hotkey` | `String` | `"Alt+Space"` | `"Alt+Space"` | Label for the global fallback keyboard shortcut registered via `RegisterHotKey`. |
+| `hotkey` | `String` | `"Alt+Space"` | e.g. `"Alt+Space"`, `"Ctrl+Space"`, `"Ctrl+Shift+A"`, `"Win+F2"` | Dynamically parsed global fallback keyboard shortcut registered via `RegisterHotKey`. |
+
+> [!TIP]
+> **Live Reload & CLI Validation**: Changes to `config.toml` automatically hot-reload within 1.5 seconds (or immediately via Tray → **Reload Apps & Config**). You can also validate your file anytime via `winscroller-2d-appview.exe --validate`.
 
 ---
 

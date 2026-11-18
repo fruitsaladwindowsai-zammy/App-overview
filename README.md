@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/brand-banner.svg" alt="Winscroller 2d Appview Brand Banner" width="100%" />
+</p>
+
 # Winscroller 2d Appview
 
 **A native fullscreen & floating Launchpad-style 2D application overview for Windows 10/11 — featuring 4-finger Precision Touchpad gestures (with automatic Windows Task View interception), continuous 2-finger page swiping, underdamped spring physics, borderless icon halos, and frosted wallpaper acrylic blur in pure Rust.**
@@ -153,6 +157,18 @@ hotkey = "Alt+Space"
 ```
 
 See [CONFIGURATION.md](CONFIGURATION.md) for full options and profiles.
+
+---
+
+## CLI Options
+
+```powershell
+winscroller-2d-appview.exe --version       # Print version and exit
+winscroller-2d-appview.exe --help          # Print usage and flags
+winscroller-2d-appview.exe --init-config   # Generate default config.toml
+winscroller-2d-appview.exe --validate      # Validate config.toml and exit
+winscroller-2d-appview.exe --config <PATH> # Load custom config.toml
+```
 
 ---
 

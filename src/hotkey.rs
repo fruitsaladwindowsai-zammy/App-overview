@@ -6,8 +6,9 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HMODULE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    keybd_event, GetAsyncKeyState, RegisterHotKey, UnregisterHotKey, KEYEVENTF_KEYUP, MOD_ALT,
-    MOD_NOREPEAT, VK_ESCAPE, VK_LWIN, VK_RWIN, VK_SPACE, VK_TAB,
+    keybd_event, GetAsyncKeyState, RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS,
+    KEYEVENTF_KEYUP, MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT, MOD_WIN, VK_ESCAPE, VK_LWIN,
+    VK_RWIN, VK_SPACE, VK_TAB,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, DispatchMessageW, GetClassNameW, GetMessageW, PostMessageW, SetWindowsHookExW,
@@ -56,6 +57,45 @@ pub enum GestureCommand {
 type GestureCallback = Box<dyn Fn(GestureCommand) + Send + 'static>;
 static GESTURE_CALLBACK: Mutex<Option<GestureCallback>> = Mutex::new(None);
 pub static IS_APP_VISIBLE: AtomicBool = AtomicBool::new(true);
+
+/// Parses a human-readable hotkey string (e.g. `"Alt+Space"`, `"Ctrl+Shift+A"`, `"Win+F2"`)
+/// into Win32 `RegisterHotKey` modifier flags and virtual key code.
+/// Falls back to `Alt+Space` if the string cannot be parsed.
+pub fn parse_hotkey(spec: &str) -> (HOT_KEY_MODIFIERS, u32) {
+    let mut mods = MOD_NOREPEAT;
+    let mut vk: Option<u32> = None;
+
+    for raw_part in spec.split('+') {
+        let part = raw_part.trim().to_ascii_lowercase();
+        match part.as_str() {
+            "alt" => mods |= MOD_ALT,
+            "ctrl" | "control" => mods |= MOD_CONTROL,
+            "shift" => mods |= MOD_SHIFT,
+            "win" | "super" | "meta" => mods |= MOD_WIN,
+            "space" => vk = Some(VK_SPACE.0 as u32),
+            "tab" => vk = Some(VK_TAB.0 as u32),
+            s if s.len() == 1 => {
+                let ch = s.as_bytes()[0].to_ascii_uppercase();
+                if ch.is_ascii_alphanumeric() {
+                    vk = Some(ch as u32);
+                }
+            }
+            s if s.starts_with('f') && s.len() <= 3 => {
+                if let Ok(num) = s[1..].parse::<u32>() {
+                    if (1..=12).contains(&num) {
+                        vk = Some(0x70 + (num - 1)); // VK_F1..VK_F12
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    match vk {
+        Some(code) if mods != MOD_NOREPEAT => (mods, code),
+        _ => (MOD_ALT | MOD_NOREPEAT, VK_SPACE.0 as u32),
+    }
+}
 
 fn notify_gesture(cmd: GestureCommand) {
     if let Ok(guard) = GESTURE_CALLBACK.lock() {
@@ -137,7 +177,7 @@ pub struct GlobalHotkeyListener {
 }
 
 impl GlobalHotkeyListener {
-    pub fn start<F>(callback: F) -> Self
+    pub fn start<F>(hotkey_spec: &str, callback: F) -> Self
     where
         F: Fn(GestureCommand) + Send + 'static,
     {
@@ -145,17 +185,20 @@ impl GlobalHotkeyListener {
             *guard = Some(Box::new(callback));
         }
 
+        let (modifiers, vk) = parse_hotkey(hotkey_spec);
+        let hotkey_label = hotkey_spec.to_string();
         let running = Arc::new(AtomicBool::new(true));
         let running_clone = running.clone();
 
         thread::spawn(move || unsafe {
             let hotkey_id = 1;
-            let modifiers = MOD_ALT | MOD_NOREPEAT;
-            let vk = VK_SPACE.0 as u32;
 
             let registered = RegisterHotKey(HWND(0), hotkey_id, modifiers, vk);
             if !registered.as_bool() {
-                eprintln!("Warning: Could not register Alt+Space hotkey (may already be in use)");
+                eprintln!(
+                    "Warning: Could not register {} hotkey (may already be in use)",
+                    hotkey_label
+                );
             }
 
             // Get valid module handle so global hook succeeds on Windows
@@ -201,5 +244,35 @@ impl GlobalHotkeyListener {
     #[allow(dead_code)]
     pub fn stop(&self) {
         self.running.store(false, Ordering::Relaxed);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_default_alt_space() {
+        let (mods, vk) = parse_hotkey("Alt+Space");
+        assert_eq!(mods, MOD_ALT | MOD_NOREPEAT);
+        assert_eq!(vk, VK_SPACE.0 as u32);
+    }
+
+    #[test]
+    fn test_parse_ctrl_shift_letter_and_fn_keys() {
+        let (mods, vk) = parse_hotkey("Ctrl+Shift+A");
+        assert_eq!(mods, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT);
+        assert_eq!(vk, b'A' as u32);
+
+        let (mods_f, vk_f) = parse_hotkey("Win+F2");
+        assert_eq!(mods_f, MOD_WIN | MOD_NOREPEAT);
+        assert_eq!(vk_f, 0x71);
+    }
+
+    #[test]
+    fn test_parse_invalid_falls_back_to_alt_space() {
+        let (mods, vk) = parse_hotkey("invalid");
+        assert_eq!(mods, MOD_ALT | MOD_NOREPEAT);
+        assert_eq!(vk, VK_SPACE.0 as u32);
     }
 }
