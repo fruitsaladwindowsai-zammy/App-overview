@@ -71,7 +71,7 @@ jobs:
       - name: Build release binary
         run: cargo build --release
 
-      - name: Package release archive
+      - name: Package release archive & checksums
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
@@ -82,6 +82,12 @@ jobs:
           Copy-Item CONFIGURATION.md dist\
           Copy-Item LICENSE dist\
           Compress-Archive -Path dist\* -DestinationPath winscroller-2d-appview-x86_64-pc-windows-msvc.zip -Force
+          $exeHash = (Get-FileHash target\release\winscroller-2d-appview.exe -Algorithm SHA256).Hash.ToLower()
+          $zipHash = (Get-FileHash winscroller-2d-appview-x86_64-pc-windows-msvc.zip -Algorithm SHA256).Hash.ToLower()
+          @(
+            "$exeHash  winscroller-2d-appview.exe"
+            "$zipHash  winscroller-2d-appview-x86_64-pc-windows-msvc.zip"
+          ) | Set-Content SHA256SUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -92,7 +98,8 @@ jobs:
           generate_release_notes: true
           make_latest: true
           files: |
-            winscroller-2d-appview-x86_64-pc-windows-msvc.zip
             target\release\winscroller-2d-appview.exe
+            winscroller-2d-appview-x86_64-pc-windows-msvc.zip
+            SHA256SUMS.txt
           draft: false
           prerelease: false

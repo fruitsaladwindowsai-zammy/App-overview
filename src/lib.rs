@@ -4,6 +4,7 @@ pub mod hotkey;
 pub mod icon_extractor;
 pub mod launcher;
 pub mod model;
+pub mod prereqs;
 pub mod tray;
 pub mod ui;
 pub mod wallpaper;

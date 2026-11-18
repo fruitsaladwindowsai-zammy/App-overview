@@ -7,6 +7,7 @@ mod hotkey;
 mod icon_extractor;
 mod launcher;
 mod model;
+mod prereqs;
 mod tray;
 mod ui;
 mod wallpaper;
@@ -48,11 +49,14 @@ fn print_help() {
          USAGE:\n\
          \twinscroller-2d-appview [OPTIONS]\n\n\
          OPTIONS:\n\
-         \t-c, --config <PATH>    Use a custom config.toml file path\n\
-         \t    --init-config      Write default config.toml and exit\n\
-         \t    --validate         Validate config.toml and exit\n\
-         \t-V, --version          Print version information and exit\n\
-         \t-h, --help             Print this help message and exit",
+         \t-c, --config <PATH>        Use a custom config.toml file path\n\
+         \t    --init-config          Write default config.toml and exit\n\
+         \t    --validate             Validate config.toml and exit\n\
+         \t    --check-prereqs        Verify & auto-install runtime prerequisites and exit\n\
+         \t    --install-autostart    Enable automatic startup at Windows logon\n\
+         \t    --remove-autostart     Disable automatic startup at Windows logon\n\
+         \t-V, --version              Print version information and exit\n\
+         \t-h, --help                 Print this help message and exit",
         env!("CARGO_PKG_VERSION")
     );
 }
@@ -62,6 +66,8 @@ fn main() -> eframe::Result<()> {
     let mut config_path = Config::config_path();
     let mut do_init_config = false;
     let mut do_validate = false;
+    let mut do_check_prereqs = false;
+    let mut autostart_action: Option<bool> = None;
 
     let mut i = 0;
     while i < args.len() {
@@ -76,12 +82,11 @@ fn main() -> eframe::Result<()> {
                 print_help();
                 return Ok(());
             }
-            "--init-config" => {
-                do_init_config = true;
-            }
-            "--validate" => {
-                do_validate = true;
-            }
+            "--init-config" => do_init_config = true,
+            "--validate" => do_validate = true,
+            "--check-prereqs" => do_check_prereqs = true,
+            "--install-autostart" => autostart_action = Some(true),
+            "--remove-autostart" => autostart_action = Some(false),
             "-c" | "--config" => {
                 if let Some(next) = args.get(i + 1) {
                     config_path = PathBuf::from(next);
@@ -91,6 +96,31 @@ fn main() -> eframe::Result<()> {
             _ => {}
         }
         i += 1;
+    }
+
+    if let Some(enable) = autostart_action {
+        attach_parent_console();
+        match prereqs::set_autostart(enable) {
+            Ok(()) => println!(
+                "Windows Startup autostart {}",
+                if enable { "enabled" } else { "disabled" }
+            ),
+            Err(err) => {
+                eprintln!("Autostart update failed: {err}");
+                std::process::exit(1);
+            }
+        }
+        return Ok(());
+    }
+
+    if do_check_prereqs {
+        attach_parent_console();
+        let report = prereqs::ensure_prerequisites(&config_path, true);
+        print!("{}", report.format_summary());
+        if !report.all_ready {
+            std::process::exit(1);
+        }
+        return Ok(());
     }
 
     if do_init_config {
@@ -105,6 +135,9 @@ fn main() -> eframe::Result<()> {
         }
         return Ok(());
     }
+
+    // Automatic runtime prerequisite check & self-healing installation on startup
+    let _prereq_report = prereqs::ensure_prerequisites(&config_path, false);
 
     let config = Config::load_from(&config_path);
 

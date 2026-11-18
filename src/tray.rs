@@ -15,9 +15,10 @@ use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu, DestroyWindow,
     DispatchMessageW, GetCursorPos, GetMessageW, GetSystemMetrics, LoadIconW, LoadImageW,
     PostQuitMessage, RegisterClassW, SetForegroundWindow, TrackPopupMenu, HICON, HMENU,
-    IDI_APPLICATION, IMAGE_ICON, LR_SHARED, MF_SEPARATOR, MF_STRING, MSG, SM_CXICON, SM_CXSMICON,
-    SM_CYICON, SM_CYSMICON, TPM_BOTTOMALIGN, TPM_LEFTALIGN, WINDOW_EX_STYLE, WM_COMMAND,
-    WM_DESTROY, WM_LBUTTONDBLCLK, WM_LBUTTONUP, WM_RBUTTONUP, WM_USER, WNDCLASSW, WS_OVERLAPPED,
+    IDI_APPLICATION, IMAGE_ICON, LR_SHARED, MF_CHECKED, MF_SEPARATOR, MF_STRING, MF_UNCHECKED, MSG,
+    SM_CXICON, SM_CXSMICON, SM_CYICON, SM_CYSMICON, TPM_BOTTOMALIGN, TPM_LEFTALIGN,
+    WINDOW_EX_STYLE, WM_COMMAND, WM_DESTROY, WM_LBUTTONDBLCLK, WM_LBUTTONUP, WM_RBUTTONUP, WM_USER,
+    WNDCLASSW, WS_OVERLAPPED,
 };
 
 pub const APP_ICON_RES_ID: usize = 1;
@@ -27,6 +28,8 @@ const IDM_OPEN: usize = 1001;
 const IDM_SETTINGS: usize = 1002;
 const IDM_RELOAD: usize = 1003;
 const IDM_EXIT: usize = 1004;
+const IDM_AUTOSTART: usize = 1005;
+const IDM_PREREQS: usize = 1006;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrayCommand {
@@ -128,8 +131,18 @@ impl TrayManager {
                                     .collect();
                                 let reload_title: Vec<u16> =
                                     "Reload Apps & Config\0".encode_utf16().collect();
+                                let autostart_title: Vec<u16> =
+                                    "Run at Windows Startup\0".encode_utf16().collect();
+                                let prereqs_title: Vec<u16> =
+                                    "Check & Install Prerequisites\0".encode_utf16().collect();
                                 let exit_title: Vec<u16> =
                                     "Exit Winscroller 2d Appview\0".encode_utf16().collect();
+
+                                let autostart_flag = if crate::prereqs::is_autostart_enabled() {
+                                    MF_STRING | MF_CHECKED
+                                } else {
+                                    MF_STRING | MF_UNCHECKED
+                                };
 
                                 let _ = AppendMenuW(
                                     hmenu,
@@ -149,6 +162,18 @@ impl TrayManager {
                                     MF_STRING,
                                     IDM_RELOAD,
                                     PCWSTR(reload_title.as_ptr()),
+                                );
+                                let _ = AppendMenuW(
+                                    hmenu,
+                                    autostart_flag,
+                                    IDM_AUTOSTART,
+                                    PCWSTR(autostart_title.as_ptr()),
+                                );
+                                let _ = AppendMenuW(
+                                    hmenu,
+                                    MF_STRING,
+                                    IDM_PREREQS,
+                                    PCWSTR(prereqs_title.as_ptr()),
                                 );
                                 let _ = AppendMenuW(hmenu, MF_SEPARATOR, 0, None);
                                 let _ = AppendMenuW(
@@ -188,6 +213,21 @@ impl TrayManager {
                                     }
                                     IDM_RELOAD => {
                                         let _ = state.sender.send(TrayCommand::Reload);
+                                    }
+                                    IDM_AUTOSTART => {
+                                        let next = !crate::prereqs::is_autostart_enabled();
+                                        let _ = crate::prereqs::set_autostart(next);
+                                    }
+                                    IDM_PREREQS => {
+                                        let cfg_path = state.config_path.clone();
+                                        thread::spawn(move || {
+                                            let _ = crate::prereqs::ensure_prerequisites(
+                                                &cfg_path, true,
+                                            );
+                                            let _ = std::process::Command::new("notepad.exe")
+                                                .arg(crate::prereqs::prereq_log_path())
+                                                .spawn();
+                                        });
                                     }
                                     IDM_EXIT => {
                                         let _ = state.sender.send(TrayCommand::Exit);

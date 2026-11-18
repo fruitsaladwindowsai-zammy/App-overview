@@ -13,8 +13,9 @@
 ![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Architecture: Native Win32 + COM + egui](https://img.shields.io/badge/backend-Win32%20%2B%20COM%20%2B%20egui-5C6BC0?style=flat-square)
 
-> 📖 **Official Documentation & Wiki**:  
-> Browse the full mdBook manual at [**fruitsaladwindowsai-zammy.github.io/App-overview**](https://fruitsaladwindowsai-zammy.github.io/App-overview/), explore the [GitHub Wiki](wiki/Home.md), or launch the interactive local showcase site via `website\serve.ps1`.
+> 📖 **Official Documentation & Direct Download**:  
+> - ⬇️ [**Download Latest `winscroller-2d-appview.exe`**](https://github.com/fruitsaladwindowsai-zammy/App-overview/releases/latest/download/winscroller-2d-appview.exe) *(automatically updated on every push — auto-checks & installs runtime prerequisites on launch)*  
+> - 📚 Read the full mdBook manual at [**fruitsaladwindowsai-zammy.github.io/App-overview**](https://fruitsaladwindowsai-zammy.github.io/App-overview/) or browse the [GitHub Wiki](wiki/Home.md).
 
 ```text
   ┌───────────────────────── Winscroller 2d Appview ─────────────────────────┐
@@ -163,11 +164,14 @@ See [CONFIGURATION.md](CONFIGURATION.md) for full options and profiles.
 ## CLI Options
 
 ```powershell
-winscroller-2d-appview.exe --version       # Print version and exit
-winscroller-2d-appview.exe --help          # Print usage and flags
-winscroller-2d-appview.exe --init-config   # Generate default config.toml
-winscroller-2d-appview.exe --validate      # Validate config.toml and exit
-winscroller-2d-appview.exe --config <PATH> # Load custom config.toml
+winscroller-2d-appview.exe --version           # Print version and exit
+winscroller-2d-appview.exe --help              # Print usage and flags
+winscroller-2d-appview.exe --init-config       # Generate default config.toml
+winscroller-2d-appview.exe --validate          # Validate config.toml and exit
+winscroller-2d-appview.exe --check-prereqs     # Verify & auto-install runtime prerequisites
+winscroller-2d-appview.exe --install-autostart # Enable automatic startup at Windows logon
+winscroller-2d-appview.exe --remove-autostart  # Disable automatic startup at Windows logon
+winscroller-2d-appview.exe --config <PATH>     # Load custom config.toml
 ```
 
 ---
