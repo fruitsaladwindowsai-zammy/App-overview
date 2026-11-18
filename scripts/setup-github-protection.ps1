@@ -55,9 +55,11 @@ if ($defaultBranch -eq "master") {
     Write-Host "Renamed GitHub default branch to 'main'!" -ForegroundColor Green
 
     # Update local git branch tracking if running inside repo
-    $gitExe = (Get-Command git -ErrorAction SilentlyContinue)?.Source
+    $gitCmd = Get-Command git -ErrorAction SilentlyContinue
+    $gitExe = if ($gitCmd) { $gitCmd.Source } else { $null }
     if (-not $gitExe) {
-        $gitExe = (Get-Item "$env:LOCALAPPDATA\GitHubDesktop\app-*\resources\app\git\cmd\git.exe" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+        $gitFile = Get-Item "$env:LOCALAPPDATA\GitHubDesktop\app-*\resources\app\git\cmd\git.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($gitFile) { $gitExe = $gitFile.FullName }
     }
     if ($gitExe) {
         $repoRoot = Split-Path $PSScriptRoot -Parent
