@@ -2,7 +2,7 @@
 
 **Winscroller 2d Appview** is engineered from the ground up for laptops with **Windows Precision Touchpads** (e.g., Dell, ThinkPad, Surface, XPS, MacBook Boot Camp).
 
-![4-Finger Gestures & Task View Suppression](../assets/concept-gestures-hook.svg)
+![4-Finger Gestures & Task View Suppression](./assets/concept-gestures-hook.svg)
 
 ## How 4-Finger Swipe Up Stops Windows Task View
 

@@ -2,7 +2,7 @@
 
 `src/model.rs` implements a deterministic, allocation-light, multi-tier fuzzy scoring engine inspired by Alfred and Savanna.
 
-![Alfred-Style Fuzzy Search Scoring](../assets/concept-fuzzy-search.svg)
+![Alfred-Style Fuzzy Search Scoring](./assets/concept-fuzzy-search.svg)
 
 ## Tokenization & Normalization
 - `fold(text)`: Lowercases and strips punctuation while preserving alphanumeric characters and spaces.

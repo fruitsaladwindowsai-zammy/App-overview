@@ -2,7 +2,7 @@
 
 Welcome to the official documentation for **Winscroller 2d Appview** — a 100% native Rust Launchpad-style 2D application overview for Windows 10 and Windows 11.
 
-![2D Launchpad Grid & Borderless Icon Halo](../assets/concept-launchpad-grid.svg)
+![2D Launchpad Grid & Borderless Icon Halo](./assets/concept-launchpad-grid.svg)
 
 ## Why Winscroller 2d Appview?
 

@@ -29,11 +29,18 @@ jobs:
         with:
           mdbook-version: 'latest'
 
+      - name: Stage visual assets into mdBook src
+        run: |
+          mkdir -p docs/src/assets
+          cp -rf docs/assets/* docs/src/assets/ 2>/dev/null || true
+
       - name: Build mdBook documentation
         run: mdbook build docs
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -2,18 +2,65 @@ name: Release Build
 
 on:
   push:
+    branches:
+      - main
+      - master
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-build
+  cancel-in-progress: false
+
 jobs:
   publish-release:
+    if: "!contains(github.event.head_commit.message, '[skip release]')"
     runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine release tag
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $tag = "${{ github.ref_name }}"
+          } else {
+            git fetch --tags --force
+            $cargo = Get-Content Cargo.toml -Raw
+            if ($cargo -match '(?m)^version\s*=\s*"(\d+)\.(\d+)\.(\d+)"') {
+              $major = [int]$Matches[1]
+              $minor = [int]$Matches[2]
+              $patch = [int]$Matches[3]
+            } else {
+              $major = 0; $minor = 1; $patch = 0
+            }
+
+            $baseTag = "v$major.$minor.$patch"
+            $existing = git tag -l "v$major.$minor.*"
+            if (-not $existing) {
+              $tag = $baseTag
+            } else {
+              $maxPatch = $patch - 1
+              foreach ($t in $existing) {
+                if ($t -match "^v$major\.$minor\.(\d+)$") {
+                  $p = [int]$Matches[1]
+                  if ($p -gt $maxPatch) { $maxPatch = $p }
+                }
+              }
+              $nextPatch = $maxPatch + 1
+              $tag = "v$major.$minor.$nextPatch"
+            }
+          }
+          Write-Host "Resolved release tag: $tag"
+          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Install Rust stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -39,7 +86,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Winscroller 2d Appview ${{ steps.version.outputs.tag }}
           body_path: RELEASE_NOTES.md
-          files: winscroller-2d-appview-x86_64-pc-windows-msvc.zip
+          generate_release_notes: true
+          make_latest: true
+          files: |
+            winscroller-2d-appview-x86_64-pc-windows-msvc.zip
+            target\release\winscroller-2d-appview.exe
           draft: false
           prerelease: false

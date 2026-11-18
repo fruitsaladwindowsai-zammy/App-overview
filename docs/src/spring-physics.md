@@ -2,7 +2,7 @@
 
 Every visual transition in **Winscroller 2d Appview** is driven by real-time discrete spring-damper physics rather than static linear or cubic curves.
 
-![Underdamped Mass-Spring Physics](../assets/concept-spring-physics.svg)
+![Underdamped Mass-Spring Physics](./assets/concept-spring-physics.svg)
 
 ## Mathematical Model
 

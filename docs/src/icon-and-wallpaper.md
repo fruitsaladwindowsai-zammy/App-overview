@@ -2,7 +2,7 @@
 
 ## High-DPI Unplated Shell Icon Pipeline
 
-![Icon Extraction Pipeline](../assets/concept-icon-pipeline.svg)
+![Icon Extraction Pipeline](./assets/concept-icon-pipeline.svg)
 
 `src/icon_extractor.rs` solves the two classic Windows icon rendering artifacts (Start Menu plated tiles and solid black legacy Win32 boxes):
 
@@ -15,7 +15,7 @@
 
 ## Dynamic `TranscodedWallpaper` 2-Pass Blur
 
-![Wallpaper Blur Pipeline](../assets/concept-wallpaper-blur.svg)
+![Wallpaper Blur Pipeline](./assets/concept-wallpaper-blur.svg)
 
 `src/wallpaper.rs` runs on a background thread at startup:
 1. Reads `%APPDATA%\Microsoft\Windows\Themes\TranscodedWallpaper`.
