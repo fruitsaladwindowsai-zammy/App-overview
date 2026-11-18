@@ -6,16 +6,16 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HMODULE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    keybd_event, GetAsyncKeyState, RegisterHotKey, UnregisterHotKey, KEYEVENTF_KEYUP,
-    MOD_ALT, MOD_NOREPEAT, VK_ESCAPE, VK_LWIN, VK_RWIN, VK_SPACE, VK_TAB,
+    keybd_event, GetAsyncKeyState, RegisterHotKey, UnregisterHotKey, KEYEVENTF_KEYUP, MOD_ALT,
+    MOD_NOREPEAT, VK_ESCAPE, VK_LWIN, VK_RWIN, VK_SPACE, VK_TAB,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    CallNextHookEx, DispatchMessageW, GetClassNameW, GetMessageW, PostMessageW,
-    SetWindowsHookExW, UnhookWindowsHookEx,
-    EVENT_OBJECT_SHOW, EVENT_SYSTEM_FOREGROUND, HHOOK, KBDLLHOOKSTRUCT,
-    MSG, WH_KEYBOARD_LL, WINEVENT_OUTOFCONTEXT, WM_CLOSE, WM_HOTKEY, WM_KEYDOWN, WM_SYSKEYDOWN,
+    CallNextHookEx, DispatchMessageW, GetClassNameW, GetMessageW, PostMessageW, SetWindowsHookExW,
+    UnhookWindowsHookEx, EVENT_OBJECT_SHOW, EVENT_SYSTEM_FOREGROUND, HHOOK, KBDLLHOOKSTRUCT, MSG,
+    WH_KEYBOARD_LL, WINEVENT_OUTOFCONTEXT, WM_CLOSE, WM_HOTKEY, WM_KEYDOWN, WM_SYSKEYDOWN,
 };
 
+#[allow(clippy::upper_case_acronyms)]
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HWINEVENTHOOK(pub isize);
@@ -53,7 +53,8 @@ pub enum GestureCommand {
     Dismiss,
 }
 
-static GESTURE_CALLBACK: Mutex<Option<Box<dyn Fn(GestureCommand) + Send + 'static>>> = Mutex::new(None);
+type GestureCallback = Box<dyn Fn(GestureCommand) + Send + 'static>;
+static GESTURE_CALLBACK: Mutex<Option<GestureCallback>> = Mutex::new(None);
 pub static IS_APP_VISIBLE: AtomicBool = AtomicBool::new(true);
 
 fn notify_gesture(cmd: GestureCommand) {
@@ -72,7 +73,8 @@ unsafe extern "system" fn low_level_keyboard_proc(
 ) -> LRESULT {
     if code >= 0 && (wparam.0 as u32 == WM_KEYDOWN || wparam.0 as u32 == WM_SYSKEYDOWN) {
         let kbd = *(lparam.0 as *const KBDLLHOOKSTRUCT);
-        let win_pressed = GetAsyncKeyState(VK_LWIN.0 as i32) < 0 || GetAsyncKeyState(VK_RWIN.0 as i32) < 0;
+        let win_pressed =
+            GetAsyncKeyState(VK_LWIN.0 as i32) < 0 || GetAsyncKeyState(VK_RWIN.0 as i32) < 0;
         let ctrl_pressed = GetAsyncKeyState(0x11 /* VK_CONTROL */) < 0;
 
         // Windows 10/11 Precision Touchpad: 4-finger swipe up generates Win + Tab (or Ctrl + Win + Up)
@@ -84,13 +86,12 @@ unsafe extern "system" fn low_level_keyboard_proc(
         }
 
         // Windows 10/11 Precision Touchpad: 4-finger swipe down generates Win + D (or Ctrl + Win + Down)
-        if (kbd.vkCode == 0x44 /* 'D' */ && win_pressed)
-            || (kbd.vkCode == 0x28 /* VK_DOWN */ && win_pressed && ctrl_pressed)
+        if ((kbd.vkCode == 0x44 /* 'D' */ && win_pressed)
+            || (kbd.vkCode == 0x28 /* VK_DOWN */ && win_pressed && ctrl_pressed))
+            && IS_APP_VISIBLE.load(Ordering::Relaxed)
         {
-            if IS_APP_VISIBLE.load(Ordering::Relaxed) {
-                notify_gesture(GestureCommand::Dismiss);
-                return LRESULT(1); // Suppress Desktop minimization while Winscroller dismisses
-            }
+            notify_gesture(GestureCommand::Dismiss);
+            return LRESULT(1); // Suppress Desktop minimization while Winscroller dismisses
         }
     }
 
@@ -161,12 +162,8 @@ impl GlobalHotkeyListener {
             let hmod = GetModuleHandleW(PCWSTR::null()).unwrap_or(HMODULE(0));
 
             // Install low-level keyboard hook to capture 4-finger touchpad gestures & suppress Task View
-            let kbd_hook = SetWindowsHookExW(
-                WH_KEYBOARD_LL,
-                Some(low_level_keyboard_proc),
-                hmod,
-                0,
-            );
+            let kbd_hook =
+                SetWindowsHookExW(WH_KEYBOARD_LL, Some(low_level_keyboard_proc), hmod, 0);
 
             // Install WinEvent hook to instantly intercept Task View window if DWM creates it
             let event_hook = SetWinEventHook(

@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGest" cx="50%" cy="50%" r="72%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="65%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#05070c"/>
+    </radialGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f5d4"/>
+      <stop offset="100%" stop-color="#89b4fa"/>
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#fb7185"/>
+    </linearGradient>
+    <filter id="glowG" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <style>
+    @keyframes swipeUp {
+      0%, 100% { transform: translateY(16px); opacity: 0.4; }
+      50% { transform: translateY(-16px); opacity: 1; }
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    .fingers { animation: swipeUp 2.6s infinite ease-in-out; }
+    .pulse { animation: pulseDot 2s infinite ease-in-out; }
+    text { font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif; }
+    .mono { font-family: 'Fira Code', Consolas, monospace; }
+  </style>
+
+  <rect width="1200" height="750" fill="url(#bgGest)"/>
+
+  <!-- Header -->
+  <g transform="translate(600, 48)">
+    <rect x="-320" y="-18" width="640" height="36" rx="18" fill="rgba(14, 20, 32, 0.95)" stroke="url(#cyanGrad)" stroke-width="1.5"/>
+    <circle cx="-294" cy="0" r="5" fill="#00f5d4" class="pulse"/>
+    <text x="-278" y="4" fill="#f8fafc" font-size="13" font-weight="700">4-Finger Precision Touchpad Engine &amp; Task View Suppression</text>
+    <text x="210" y="4" fill="#00f5d4" font-size="11" class="mono">WH_KEYBOARD_LL</text>
+  </g>
+
+  <!-- Step 1: Precision Touchpad -->
+  <g transform="translate(60, 140)">
+    <rect width="270" height="460" rx="18" fill="#0c1322" stroke="rgba(137,180,250,0.4)" stroke-width="1.5"/>
+    <rect x="16" y="16" width="238" height="32" rx="8" fill="#152036"/>
+    <text x="135" y="37" fill="#89b4fa" font-size="12" font-weight="700" text-anchor="middle">1. PRECISION TOUCHPAD</text>
+
+    <!-- Touchpad Surface -->
+    <rect x="35" y="75" width="200" height="170" rx="14" fill="#111a2e" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+    <g class="fingers">
+      <circle cx="80" cy="175" r="11" fill="#00f5d4"/>
+      <circle cx="116" cy="163" r="11" fill="#00f5d4"/>
+      <circle cx="152" cy="163" r="11" fill="#00f5d4"/>
+      <circle cx="188" cy="175" r="11" fill="#00f5d4"/>
+      <path d="M 134 140 L 134 105 M 122 117 L 134 105 L 146 117" stroke="#00f5d4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <text x="135" y="278" fill="#f8fafc" font-size="13" font-weight="700" text-anchor="middle">4 Fingers Swipe UP</text>
+    <text x="135" y="298" fill="#94a3b8" font-size="11" class="mono" text-anchor="middle">Windows sends Win+Tab</text>
+
+    <line x1="35" y1="322" x2="235" y2="322" stroke="rgba(255,255,255,0.1)"/>
+
+    <text x="135" y="352" fill="#f8fafc" font-size="13" font-weight="700" text-anchor="middle">4 Fingers Swipe DOWN</text>
+    <text x="135" y="372" fill="#94a3b8" font-size="11" class="mono" text-anchor="middle">Windows sends Win+D</text>
+
+    <rect x="35" y="396" width="200" height="44" rx="10" fill="rgba(137,180,250,0.12)" stroke="rgba(137,180,250,0.35)"/>
+    <text x="135" y="416" fill="#89b4fa" font-size="11" font-weight="700" text-anchor="middle">Fallback Hotkey</text>
+    <text x="135" y="432" fill="#e2e8f0" font-size="11" class="mono" text-anchor="middle">Alt + Space / Esc</text>
+  </g>
+
+  <!-- Connector Arrow 1->2 -->
+  <path d="M 335 370 L 405 370" stroke="#00f5d4" stroke-width="2.5" stroke-dasharray="6 4"/>
+  <polygon points="405,363 418,370 405,377" fill="#00f5d4"/>
+
+  <!-- Step 2: Dual-Layer Interceptor -->
+  <g transform="translate(425, 115)">
+    <rect width="350" height="510" rx="18" fill="#0c1322" stroke="url(#cyanGrad)" stroke-width="1.8"/>
+    <rect x="16" y="16" width="318" height="32" rx="8" fill="#152036"/>
+    <text x="175" y="37" fill="#00f5d4" font-size="12" font-weight="700" text-anchor="middle">2. DUAL-LAYER INTERCEPTION ENGINE</text>
+
+    <!-- Layer A -->
+    <g transform="translate(22, 72)">
+      <rect width="306" height="170" rx="12" fill="#111b30" stroke="#00f5d4" stroke-width="1.2"/>
+      <text x="16" y="26" fill="#00f5d4" font-size="12" font-weight="700">LAYER A: WH_KEYBOARD_LL HOOK</text>
+      <text x="16" y="48" fill="#cbd5e1" font-size="11" class="mono">GetModuleHandleW(None)</text>
+      <text x="16" y="70" fill="#cbd5e1" font-size="11" class="mono">if Win+Tab || Ctrl+Win+Up:</text>
+      <text x="28" y="90" fill="#89b4fa" font-size="11" class="mono">notify(GestureCommand::Toggle)</text>
+      <text x="28" y="110" fill="#4ade80" font-size="11" class="mono">return LRESULT(1) // EAT KEY</text>
+      <text x="16" y="136" fill="#cbd5e1" font-size="11" class="mono">if Win+D &amp;&amp; IS_APP_VISIBLE:</text>
+      <text x="28" y="155" fill="#fbbf24" font-size="11" class="mono">notify(Dismiss); return LRESULT(1)</text>
+    </g>
+
+    <!-- Layer B -->
+    <g transform="translate(22, 266)">
+      <rect width="306" height="145" rx="12" fill="#111b30" stroke="#cba6f7" stroke-width="1.2"/>
+      <text x="16" y="26" fill="#cba6f7" font-size="12" font-weight="700">LAYER B: SetWinEventHook FALLBACK</text>
+      <text x="16" y="48" fill="#cbd5e1" font-size="11" class="mono">EVENT_SYSTEM_FOREGROUND</text>
+      <text x="16" y="70" fill="#cbd5e1" font-size="11" class="mono">Detect Task View window class:</text>
+      <text x="24" y="90" fill="#f472b6" font-size="10.5" class="mono">MultitaskingViewBackgroundHost</text>
+      <text x="24" y="108" fill="#f472b6" font-size="10.5" class="mono">XamlExplorerHostIslandWindow</text>
+      <text x="16" y="130" fill="#4ade80" font-size="11" class="mono">PostMessageW(WM_CLOSE) + Toggle</text>
+    </g>
+
+    <!-- Suppressed Task View Pill -->
+    <g transform="translate(22, 434)">
+      <rect width="306" height="52" rx="10" fill="rgba(244, 63, 94, 0.14)" stroke="url(#redGrad)" stroke-width="1.2"/>
+      <text x="153" y="23" fill="#fb7185" font-size="12" font-weight="700" text-anchor="middle">✕ WINDOWS TASK VIEW STOPPED</text>
+      <text x="153" y="40" fill="#fda4af" font-size="10.5" class="mono" text-anchor="middle">Zero flicker · Zero desktop minimize</text>
+    </g>
+  </g>
+
+  <!-- Connector Arrow 2->3 -->
+  <path d="M 780 370 L 850 370" stroke="#00f5d4" stroke-width="2.5" stroke-dasharray="6 4"/>
+  <polygon points="850,363 863,370 850,377" fill="#00f5d4"/>
+
+  <!-- Step 3: Winscroller 2d Appview -->
+  <g transform="translate(870, 140)">
+    <rect width="270" height="460" rx="18" fill="#0c1322" stroke="#00f5d4" stroke-width="1.5"/>
+    <rect x="16" y="16" width="238" height="32" rx="8" fill="#152036"/>
+    <text x="135" y="37" fill="#4ade80" font-size="12" font-weight="700" text-anchor="middle">3. WINSCROLLER 2D APPVIEW</text>
+
+    <rect x="26" y="80" width="218" height="120" rx="12" fill="rgba(0, 245, 212, 0.08)" stroke="rgba(0, 245, 212, 0.35)"/>
+    <text x="135" y="114" fill="#00f5d4" font-size="13" font-weight="700" text-anchor="middle">SPRING ENTRANCE</text>
+    <text x="135" y="138" fill="#e2e8f0" font-size="11" class="mono" text-anchor="middle">Scale 0.91 → 1.025 → 1.00</text>
+    <text x="135" y="160" fill="#94a3b8" font-size="11" text-anchor="middle">Frosted Wallpaper Fade-In</text>
+    <text x="135" y="180" fill="#94a3b8" font-size="11" text-anchor="middle">Always-On-Top Focus</text>
+
+    <rect x="26" y="226" width="218" height="110" rx="12" fill="rgba(137, 180, 250, 0.08)" stroke="rgba(137, 180, 250, 0.35)"/>
+    <text x="135" y="256" fill="#89b4fa" font-size="13" font-weight="700" text-anchor="middle">SPRING DISMISSAL</text>
+    <text x="135" y="280" fill="#e2e8f0" font-size="11" class="mono" text-anchor="middle">4-Finger Down / Esc / Click</text>
+    <text x="135" y="302" fill="#94a3b8" font-size="11" text-anchor="middle">Hides viewport cleanly</text>
+    <text x="135" y="320" fill="#94a3b8" font-size="11" text-anchor="middle">Zero taskbar clutter</text>
+
+    <rect x="26" y="362" width="218" height="72" rx="12" fill="#131c31" stroke="rgba(255,255,255,0.12)"/>
+    <text x="135" y="390" fill="#cba6f7" font-size="12" font-weight="700" text-anchor="middle">SYSTEM TRAY DAEMON</text>
+    <text x="135" y="412" fill="#94a3b8" font-size="11" class="mono" text-anchor="middle">mpsc::channel &lt;1ms wakeup</text>
+  </g>
+</svg>

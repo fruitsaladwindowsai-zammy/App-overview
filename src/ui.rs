@@ -5,8 +5,8 @@ use std::thread;
 use std::time::Instant;
 
 use egui::{
-    pos2, vec2, Align2, Color32, ColorImage, FontId, Key, Rect, Rounding, Stroke,
-    TextureHandle, TextureOptions,
+    pos2, vec2, Align2, Color32, ColorImage, FontId, Key, Rect, Rounding, Stroke, TextureHandle,
+    TextureOptions,
 };
 
 use crate::app_scanner::scan_installed_apps;
@@ -14,9 +14,7 @@ use crate::config::Config;
 use crate::hotkey::GestureCommand;
 use crate::icon_extractor::{get_cached_or_extract, RawIcon};
 use crate::launcher::launch_app;
-use crate::model::{
-    move_selection, page_count, per_page, score_entry, AppEntry, MoveDirection,
-};
+use crate::model::{move_selection, page_count, per_page, score_entry, AppEntry, MoveDirection};
 use crate::tray::TrayCommand;
 use crate::wallpaper::{spawn_wallpaper_loader, BlurredWallpaper};
 
@@ -258,9 +256,7 @@ impl SavannaApp {
                         }
                     }
                     egui::Event::Key {
-                        key,
-                        pressed: true,
-                        ..
+                        key, pressed: true, ..
                     } => match key {
                         Key::Backspace => {
                             if !self.search_query.is_empty() {
@@ -327,14 +323,14 @@ impl SavannaApp {
                         Key::PageDown => {
                             if self.target_page < pages.saturating_sub(1) {
                                 self.target_page += 1;
-                                self.selected_index = (self.target_page * pp).min(total.saturating_sub(1));
+                                self.selected_index =
+                                    (self.target_page * pp).min(total.saturating_sub(1));
                             }
                         }
-                        Key::PageUp => {
-                            if self.target_page > 0 {
-                                self.target_page -= 1;
-                                self.selected_index = (self.target_page * pp).min(total.saturating_sub(1));
-                            }
+                        Key::PageUp if self.target_page > 0 => {
+                            self.target_page -= 1;
+                            self.selected_index =
+                                (self.target_page * pp).min(total.saturating_sub(1));
                         }
                         _ => {}
                     },
@@ -342,18 +338,24 @@ impl SavannaApp {
                         // Two-finger horizontal trackpad swipe or mouse wheel
                         if delta.x.abs() > 0.4 {
                             self.page_offset -= delta.x * 0.012;
-                            self.target_page = self.page_offset.round().clamp(0.0, (pages.saturating_sub(1)) as f32) as usize;
+                            self.target_page = self
+                                .page_offset
+                                .round()
+                                .clamp(0.0, (pages.saturating_sub(1)) as f32)
+                                as usize;
                         } else if delta.y > 18.0 {
                             // Upward vertical scroll
                             if self.target_page > 0 {
                                 self.target_page -= 1;
-                                self.selected_index = (self.target_page * pp).min(total.saturating_sub(1));
+                                self.selected_index =
+                                    (self.target_page * pp).min(total.saturating_sub(1));
                             }
                         } else if delta.y < -18.0 {
                             // Downward vertical scroll -> if at bottom or gesture, dismiss
                             if self.target_page < pages.saturating_sub(1) {
                                 self.target_page += 1;
-                                self.selected_index = (self.target_page * pp).min(total.saturating_sub(1));
+                                self.selected_index =
+                                    (self.target_page * pp).min(total.saturating_sub(1));
                             } else {
                                 self.initiate_dismiss();
                             }
@@ -367,7 +369,10 @@ impl SavannaApp {
             let smooth = i.smooth_scroll_delta;
             if smooth.x.abs() > 0.6 {
                 self.page_offset -= smooth.x * 0.004;
-                self.target_page = self.page_offset.round().clamp(0.0, (pages.saturating_sub(1)) as f32) as usize;
+                self.target_page =
+                    self.page_offset
+                        .round()
+                        .clamp(0.0, (pages.saturating_sub(1)) as f32) as usize;
             }
 
             // Trackpad / Mouse Drag Swipe gesture (multi-touch or drag all around)
@@ -399,7 +404,11 @@ impl SavannaApp {
                     } else if self.page_velocity < -1.2 {
                         self.target_page = self.target_page.saturating_sub(1);
                     } else {
-                        self.target_page = self.page_offset.round().clamp(0.0, (pages.saturating_sub(1)) as f32) as usize;
+                        self.target_page = self
+                            .page_offset
+                            .round()
+                            .clamp(0.0, (pages.saturating_sub(1)) as f32)
+                            as usize;
                     }
                     self.selected_index = (self.target_page * pp).min(total.saturating_sub(1));
                 }
@@ -497,7 +506,8 @@ impl eframe::App for SavannaApp {
         let screen_rect = ctx.screen_rect();
         let painter = ctx.layer_painter(egui::LayerId::background());
 
-        let is_centered = self.config.centered || self.config.backdrop.eq_ignore_ascii_case("Centered");
+        let is_centered =
+            self.config.centered || self.config.backdrop.eq_ignore_ascii_case("Centered");
         let accent = self.accent_color();
 
         let surface_rect = if is_centered {
@@ -539,7 +549,15 @@ impl eframe::App for SavannaApp {
                 surface_rect,
                 Rounding::same(24.0),
                 Color32::from_rgba_unmultiplied(18, 24, 38, (240.0 * current_alpha) as u8),
-                Stroke::new(1.8_f32, Color32::from_rgba_unmultiplied(accent.r(), accent.g(), accent.b(), (120.0 * current_alpha) as u8)),
+                Stroke::new(
+                    1.8_f32,
+                    Color32::from_rgba_unmultiplied(
+                        accent.r(),
+                        accent.g(),
+                        accent.b(),
+                        (120.0 * current_alpha) as u8,
+                    ),
+                ),
             );
         } else {
             painter.rect_filled(
@@ -548,7 +566,8 @@ impl eframe::App for SavannaApp {
                 Color32::from_rgba_unmultiplied(12, 16, 26, (140.0 * current_alpha) as u8),
             );
 
-            let top_gradient = Rect::from_min_size(surface_rect.min, vec2(surface_rect.width(), 160.0));
+            let top_gradient =
+                Rect::from_min_size(surface_rect.min, vec2(surface_rect.width(), 160.0));
             painter.rect_filled(
                 top_gradient,
                 Rounding::ZERO,
@@ -573,7 +592,15 @@ impl eframe::App for SavannaApp {
             painter.rect_stroke(
                 glow_rect,
                 Rounding::same(search_h / 2.0),
-                Stroke::new(2.0_f32, Color32::from_rgba_unmultiplied(accent.r(), accent.g(), accent.b(), (70.0 * current_alpha) as u8)),
+                Stroke::new(
+                    2.0_f32,
+                    Color32::from_rgba_unmultiplied(
+                        accent.r(),
+                        accent.g(),
+                        accent.b(),
+                        (70.0 * current_alpha) as u8,
+                    ),
+                ),
             );
         }
 
@@ -583,9 +610,20 @@ impl eframe::App for SavannaApp {
             Color32::from_rgba_unmultiplied(255, 255, 255, (22.0 * current_alpha) as u8)
         };
         let pill_border = if is_searching {
-            Stroke::new(1.8_f32, Color32::from_rgba_unmultiplied(accent.r(), accent.g(), accent.b(), (255.0 * current_alpha) as u8))
+            Stroke::new(
+                1.8_f32,
+                Color32::from_rgba_unmultiplied(
+                    accent.r(),
+                    accent.g(),
+                    accent.b(),
+                    (255.0 * current_alpha) as u8,
+                ),
+            )
         } else {
-            Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(255, 255, 255, (45.0 * current_alpha) as u8))
+            Stroke::new(
+                1.0_f32,
+                Color32::from_rgba_unmultiplied(255, 255, 255, (45.0 * current_alpha) as u8),
+            )
         };
 
         painter.rect(
@@ -601,7 +639,11 @@ impl eframe::App for SavannaApp {
             Align2::LEFT_CENTER,
             "🔍",
             FontId::proportional(15.0),
-            if is_searching { accent } else { Color32::from_rgba_unmultiplied(255, 255, 255, (160.0 * current_alpha) as u8) },
+            if is_searching {
+                accent
+            } else {
+                Color32::from_rgba_unmultiplied(255, 255, 255, (160.0 * current_alpha) as u8)
+            },
         );
 
         // Search Text or Placeholder
@@ -671,7 +713,8 @@ impl eframe::App for SavannaApp {
             if page_shift_x.abs() < screen_rect.width() + 100.0 {
                 let p_start = page_idx * pp;
                 let p_end = (p_start + pp).min(total);
-                let page_fade = (1.0 - (page_shift_x.abs() / (screen_rect.width() * 0.85))).clamp(0.0, 1.0);
+                let page_fade =
+                    (1.0 - (page_shift_x.abs() / (screen_rect.width() * 0.85))).clamp(0.0, 1.0);
                 let page_alpha_u8 = (255.0 * current_alpha * page_fade) as u8;
 
                 for i in p_start..p_end {
@@ -685,7 +728,7 @@ impl eframe::App for SavannaApp {
 
                     let app = &self.filtered_apps[i];
                     let is_selected = self.selected_index == i;
-                    let is_hovered = pointer_pos.map_or(false, |p| cell_rect.contains(p));
+                    let is_hovered = pointer_pos.is_some_and(|p| cell_rect.contains(p));
 
                     if is_hovered && page_shift_x.abs() < 60.0 {
                         self.selected_index = i;
@@ -706,12 +749,16 @@ impl eframe::App for SavannaApp {
                     let render_icon_size = icon_base_size * icon_scale * current_scale;
 
                     let icon_center = pos2(cell_rect.center().x, cell_rect.min.y + cell_h * 0.42);
-                    let icon_rect = Rect::from_center_size(icon_center, vec2(render_icon_size, render_icon_size));
+                    let icon_rect = Rect::from_center_size(
+                        icon_center,
+                        vec2(render_icon_size, render_icon_size),
+                    );
 
                     // BORDERLESS SELECTION: Soft ambient glass wash strictly behind the icon (NO BORDER)
                     if is_active {
                         let halo_size = render_icon_size + 14.0;
-                        let halo_rect = Rect::from_center_size(icon_center, vec2(halo_size, halo_size));
+                        let halo_rect =
+                            Rect::from_center_size(icon_center, vec2(halo_size, halo_size));
 
                         let halo_alpha = (if is_selected { 36.0 } else { 22.0 } * page_fade) as u8;
                         painter.rect_filled(
@@ -736,7 +783,13 @@ impl eframe::App for SavannaApp {
                             Rounding::same(16.0),
                             Color32::from_rgba_unmultiplied(36, 46, 72, page_alpha_u8),
                         );
-                        let initial = app.name.chars().next().unwrap_or('A').to_uppercase().to_string();
+                        let initial = app
+                            .name
+                            .chars()
+                            .next()
+                            .unwrap_or('A')
+                            .to_uppercase()
+                            .to_string();
                         painter.text(
                             icon_rect.center(),
                             Align2::CENTER_CENTER,
@@ -760,11 +813,19 @@ impl eframe::App for SavannaApp {
                         if is_selected && page_shift_x.abs() < 60.0 {
                             let pill_w = galley.size().x + 18.0;
                             let pill_h = galley.size().y + 6.0;
-                            let pill_rect = Rect::from_center_size(pos2(cell_rect.center().x, label_y), vec2(pill_w, pill_h));
+                            let pill_rect = Rect::from_center_size(
+                                pos2(cell_rect.center().x, label_y),
+                                vec2(pill_w, pill_h),
+                            );
                             painter.rect_filled(
                                 pill_rect,
                                 Rounding::same(pill_h / 2.0),
-                                Color32::from_rgba_unmultiplied(255, 255, 255, (30.0 * page_fade) as u8),
+                                Color32::from_rgba_unmultiplied(
+                                    255,
+                                    255,
+                                    255,
+                                    (30.0 * page_fade) as u8,
+                                ),
                             );
                         } else {
                             // Text drop shadow for contrast against wallpaper
@@ -807,10 +868,12 @@ impl eframe::App for SavannaApp {
                 let active_weight = (1.0 - dist_to_page).clamp(0.0, 1.0);
                 let dot_w = 8.0 + 18.0 * active_weight;
                 let dot_h = 8.0;
-                let dot_rect = Rect::from_center_size(pos2(cur_x + dot_w / 2.0, dot_y), vec2(dot_w, dot_h));
+                let dot_rect =
+                    Rect::from_center_size(pos2(cur_x + dot_w / 2.0, dot_y), vec2(dot_w, dot_h));
 
                 // Click dot to jump directly to page
-                if primary_clicked && pointer_pos.map_or(false, |p| dot_rect.expand(6.0).contains(p)) {
+                if primary_clicked && pointer_pos.is_some_and(|p| dot_rect.expand(6.0).contains(p))
+                {
                     self.target_page = page;
                     self.selected_index = (page * pp).min(total.saturating_sub(1));
                 }

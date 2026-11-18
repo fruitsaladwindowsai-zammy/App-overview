@@ -1,7 +1,7 @@
 // User configuration loader & serializer for Winscroller 2d Appview
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {

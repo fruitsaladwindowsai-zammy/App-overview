@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgWall" cx="50%" cy="50%" r="72%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="65%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#05070c"/>
+    </radialGradient>
+    <linearGradient id="wpSrc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="50%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#db2777"/>
+    </linearGradient>
+    <filter id="heavyBlur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+  <style>
+    text { font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif; }
+    .mono { font-family: 'Fira Code', Consolas, monospace; }
+  </style>
+
+  <rect width="1200" height="750" fill="url(#bgWall)"/>
+
+  <g transform="translate(600, 48)">
+    <rect x="-310" y="-18" width="620" height="36" rx="18" fill="rgba(14, 20, 32, 0.95)" stroke="#89b4fa" stroke-width="1.5"/>
+    <circle cx="-284" cy="0" r="5" fill="#89b4fa"/>
+    <text x="-268" y="4" fill="#f8fafc" font-size="13" font-weight="700">Dynamic TranscodedWallpaper 2-Pass Box Blur &amp; Acrylic Tint</text>
+    <text x="200" y="4" fill="#00f5d4" font-size="11" class="mono">640×360 O(N)</text>
+  </g>
+
+  <!-- Stage 1: Raw Wallpaper -->
+  <g transform="translate(70, 150)">
+    <rect width="310" height="440" rx="18" fill="#0c1322" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+    <text x="155" y="38" fill="#89b4fa" font-size="13" font-weight="700" text-anchor="middle">1. ACTIVE WINDOWS WALLPAPER</text>
+    <rect x="25" y="64" width="260" height="150" rx="12" fill="url(#wpSrc)"/>
+    <polygon points="25,214 115,130 190,185 240,145 285,214" fill="rgba(15,23,42,0.55)"/>
+    <circle cx="220" cy="105" r="22" fill="#fde047" opacity="0.85"/>
+
+    <text x="25" y="250" fill="#f8fafc" font-size="12" font-weight="700">Source Path</text>
+    <text x="25" y="272" fill="#00f5d4" font-size="10.5" class="mono">%APPDATA%\Microsoft\Windows\</text>
+    <text x="25" y="288" fill="#00f5d4" font-size="10.5" class="mono">Themes\TranscodedWallpaper</text>
+
+    <text x="25" y="326" fill="#f8fafc" font-size="12" font-weight="700">Triangle Downscale</text>
+    <text x="25" y="348" fill="#cbd5e1" font-size="11.5">Resized to 640×360 in background</text>
+    <text x="25" y="368" fill="#cbd5e1" font-size="11.5">thread for ultra-fast CPU blur and</text>
+    <text x="25" y="388" fill="#cbd5e1" font-size="11.5">low GPU VRAM consumption.</text>
+  </g>
+
+  <path d="M 386 370 L 434 370" stroke="#00f5d4" stroke-width="2.5"/>
+  <polygon points="432,364 442,370 432,376" fill="#00f5d4"/>
+
+  <!-- Stage 2: 2-Pass Box Blur -->
+  <g transform="translate(445, 150)">
+    <rect width="310" height="440" rx="18" fill="#0c1322" stroke="#00f5d4" stroke-width="1.5"/>
+    <text x="155" y="38" fill="#00f5d4" font-size="13" font-weight="700" text-anchor="middle">2. 2-PASS SEPARABLE BLUR</text>
+
+    <rect x="25" y="64" width="260" height="150" rx="12" fill="#131c31"/>
+    <g clip-path="inset(0 round 12px)">
+      <rect x="35" y="74" width="240" height="130" rx="10" fill="url(#wpSrc)" filter="url(#heavyBlur)"/>
+    </g>
+
+    <text x="25" y="250" fill="#f8fafc" font-size="12" font-weight="700">Sliding-Window O(W·H)</text>
+    <text x="25" y="274" fill="#cbd5e1" font-size="11" class="mono">fast_blur(&amp;mut img, radius=12)</text>
+    <text x="25" y="294" fill="#cbd5e1" font-size="11" class="mono">fast_blur(&amp;mut img, radius=12)</text>
+    <text x="25" y="328" fill="#94a3b8" font-size="11.5">Two separable H+V passes closely</text>
+    <text x="25" y="348" fill="#94a3b8" font-size="11.5">approximate true Gaussian blur in</text>
+    <text x="25" y="368" fill="#94a3b8" font-size="11.5">under 12ms with zero dependencies.</text>
+  </g>
+
+  <path d="M 761 370 L 809 370" stroke="#00f5d4" stroke-width="2.5"/>
+  <polygon points="807,364 817,370 807,376" fill="#00f5d4"/>
+
+  <!-- Stage 3: Frosted Acrylic Vignette -->
+  <g transform="translate(820, 150)">
+    <rect width="310" height="440" rx="18" fill="#0c1322" stroke="#cba6f7" stroke-width="1.5"/>
+    <text x="155" y="38" fill="#cba6f7" font-size="13" font-weight="700" text-anchor="middle">3. FROSTED ACRYLIC TINT</text>
+
+    <rect x="25" y="64" width="260" height="150" rx="12" fill="#0e121e"/>
+    <rect x="35" y="74" width="240" height="130" rx="10" fill="url(#wpSrc)" opacity="0.45" filter="url(#heavyBlur)"/>
+    <rect x="25" y="64" width="260" height="150" rx="12" fill="rgba(14, 18, 30, 0.55)"/>
+    <text x="155" y="145" fill="#ffffff" font-size="14" font-weight="700" text-anchor="middle">Crisp White Labels</text>
+
+    <text x="25" y="250" fill="#f8fafc" font-size="12" font-weight="700">Acrylic Blend Formula</text>
+    <text x="25" y="274" fill="#cba6f7" font-size="11" class="mono">tint = rgba(14, 18, 30, 0.55)</text>
+    <text x="25" y="296" fill="#cbd5e1" font-size="11" class="mono">out = src * 0.45 + tint * 0.55</text>
+
+    <text x="25" y="334" fill="#94a3b8" font-size="11.5">Guarantees WCAG-grade text</text>
+    <text x="25" y="354" fill="#94a3b8" font-size="11.5">legibility even over pure white</text>
+    <text x="25" y="374" fill="#94a3b8" font-size="11.5">or high-contrast wallpapers.</text>
+  </g>
+</svg>

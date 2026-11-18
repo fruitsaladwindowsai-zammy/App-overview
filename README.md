@@ -1,303 +1,176 @@
-# Winscroller 2d Appview 🪟✨
-### Native Launchpad & 2D Application Overview for Windows
-*A native Rust-powered fullscreen and floating application overview with macOS Launchpad aesthetics, hardware-accelerated frosted wallpaper blur, Windows Precision Touchpad 4-finger gestures, and damped spring physics.*
+# Winscroller 2d Appview
 
----
+**A native fullscreen & floating Launchpad-style 2D application overview for Windows 10/11 — featuring 4-finger Precision Touchpad gestures (with automatic Windows Task View interception), continuous 2-finger page swiping, underdamped spring physics, borderless icon halos, and frosted wallpaper acrylic blur in pure Rust.**
 
-## 📑 Table of Contents
-1. [Overview & Philosophy](#1-overview--philosophy)
-2. [Key Capabilities & Features](#2-key-capabilities--features)
-3. [Architecture & Engine Design](#3-architecture--engine-design)
-4. [Precision Touchpad & Gesture System](#4-precision-touchpad--gesture-system)
-   - [4-Finger Swipe Up (Summon & Task View Interception)](#4-finger-swipe-up-summon--task-view-interception)
-   - [4-Finger Swipe Down & Escape (Dismissal)](#4-finger-swipe-down--escape-dismissal)
-   - [Two-Finger Continuous Swiping & Momentum](#two-finger-continuous-swiping--momentum)
-5. [Visual & Physics Aesthetics](#5-visual--physics-aesthetics)
-   - [Damped Harmonic Oscillator (Spring & Bounce)](#damped-harmonic-oscillator-spring--bounce)
-   - [Borderless Icon Selection Highlight](#borderless-icon-selection-highlight)
-   - [Dynamic Frosted Wallpaper Acrylic Blur](#dynamic-frosted-wallpaper-acrylic-blur)
-   - [High-DPI Unplated Icon Extraction Pipeline](#high-dpi-unplated-icon-extraction-pipeline)
-6. [Installation & Deployment Manual](#6-installation--deployment-manual)
-   - [Prerequisites](#prerequisites)
-   - [Pre-compiled Release Binary](#pre-compiled-release-binary)
-   - [Building from Source](#building-from-source)
-   - [Configuring Autostart with Windows](#configuring-autostart-with-windows)
-7. [User Manual & Navigation Controls](#7-user-manual--navigation-controls)
-8. [Configuration Guide (`config.toml`)](#8-configuration-guide-configtoml)
-9. [Troubleshooting & FAQs](#9-troubleshooting--faqs)
+![Platform: Windows 10 / 11](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6?style=flat-square)
+![Rust Edition 2021](https://img.shields.io/badge/rust-Edition%202021-orange?style=flat-square)
+[![Windows CI](https://github.com/fruitsaladwindowsai-zammy/App-overview/actions/workflows/ci.yml/badge.svg)](https://github.com/fruitsaladwindowsai-zammy/App-overview/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-mdBook%20Manual-00f5d4?style=flat-square&logo=gitbook&logoColor=black)](https://fruitsaladwindowsai-zammy.github.io/App-overview/)
+![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![Architecture: Native Win32 + COM + egui](https://img.shields.io/badge/backend-Win32%20%2B%20COM%20%2B%20egui-5C6BC0?style=flat-square)
 
----
+> 📖 **Official Documentation & Wiki**:  
+> Browse the full mdBook manual at [**fruitsaladwindowsai-zammy.github.io/App-overview**](https://fruitsaladwindowsai-zammy.github.io/App-overview/), explore the [GitHub Wiki](wiki/Home.md), or launch the interactive local showcase site via `website\serve.ps1`.
 
-## 1. Overview & Philosophy
-
-**Winscroller 2d Appview** is a zero-latency, 100% native Rust application overview designed to replace the conventional Windows Start Menu and Task View with a fluid, distraction-free app launcher inspired by macOS Launchpad and iOS App Library.
-
-Unlike typical Electron or web-based overlays that suffer from startup latency, frame jitter, and multi-gigabyte memory footprints, Winscroller 2d Appview is built with:
-- **Zero Heavy Web Runtimes**: Pure native Rust compiled to a single standalone binary.
-- **Microsecond Response Time**: Sits silently in the background as a lightweight system tray daemon (using `< 35 MB` RAM).
-- **Direct GPU-Accelerated Rendering**: Powered by `egui` and `wgpu`/DirectX, running synchronized at your display's native refresh rate (60Hz, 120Hz, 165Hz, or 240Hz).
-- **Deep Windows OS Integration**: Intercepts Windows Precision Touchpad multi-touch gestures at the kernel/hook level, reads active transcoded desktop wallpapers, and extracts unplated high-resolution Win32/UWP assets via Windows Shell COM interfaces.
-
----
-
-## 2. Key Capabilities & Features
-
-- **Seamless Native Overlay (No Taskbar Button)**:
-  - Runs in the background as a notification tray daemon without occupying space on the Windows taskbar (`with_taskbar(false)`).
-  - Toggles smoothly over any fullscreen game, browser, IDE, or multi-monitor setup.
-- **Native 4-Finger Touchpad Gestures**:
-  - **4 Fingers UP**: Summons Winscroller 2d Appview instantly while intercepting and suppressing the default Windows Task View / App View.
-  - **4 Fingers DOWN**: Dismisses the view smoothly with damped bounce physics and prevents the desktop from minimizing.
-- **Continuous Two-Finger Page Swiping**:
-  - Horizontal trackpad scrolling smoothly glides pages left and right with continuous sub-pixel coordinates.
-  - Features authentic inertia, fling physics, and spring-damper snapping.
-  - Active pagination indicator pills morph and expand in real-time according to fractional page offsets.
-- **Refined Borderless Icon Selection**:
-  - No bulky rectangular cards or distracting stroke outlines.
-  - Subtly scales icons up by **1.10x** with a soft, frosted ambient glow strictly centered behind the icon glyph.
-- **Dynamic Desktop Wallpaper Frosted Glass**:
-  - Automatically loads and blurs your active Windows desktop background (`%APPDATA%\Microsoft\Windows\Themes\TranscodedWallpaper`).
-  - Dark acrylic vignette provides high contrast and crisp readability for all application titles.
-- **Alfred-Style Fast Keyboard Search**:
-  - Translucent search capsule with glowing focus ring.
-  - Intelligent scoring based on word prefixes, camelCase initials (e.g. `cmd` for Command Prompt, `vs` for Visual Studio), and fuzzy substrings.
-- **Filtered Clutter-Free Application Scanner**:
-  - Automatically queries both Win32 Start Menu shortcuts and UWP/MSIX packages.
-  - Automatically filters out uninstallers, diagnostic tools, and system clutter (`dfrgui`, `Event Viewer`, `Computer Management`, duplicate private browsing entries).
-
----
-
-## 3. Architecture & Engine Design
-
-The application is structured into modular, low-overhead native subsystems:
-
-| Module | Source File | Responsibility |
-|---|---|---|
-| **App Entry Point** | `src/main.rs` | Viewport builder, subsystem initialization, and event orchestrator. |
-| **UI & Render Engine** | `src/ui.rs` | Continuous multi-page grid renderer, search capsule, pagination, and spring physics. |
-| **Touchpad & Gestures** | `src/hotkey.rs` | `WH_KEYBOARD_LL` hook, `SetWinEventHook` Task View interceptor, and `RegisterHotKey`. |
-| **Icon Extraction** | `src/icon_extractor.rs` | Shell COM item extraction, unplated asset trimming, GDI transparency correction, and disk caching. |
-| **Wallpaper Loader** | `src/wallpaper.rs` | Desktop background discovery, downscaling, 2-pass box blur, and texture uploading. |
-| **App Scanner** | `src/app_scanner.rs` | Win32 `.lnk` parsing, PowerShell `Get-StartApps` query, and noise filtering. |
-| **Model & Scoring** | `src/model.rs` | Alfred-style fuzzy keyword search engine and pagination arithmetic. |
-| **System Tray** | `src/tray.rs` | Win32 `Shell_NotifyIconW` daemon and context menu handler. |
-| **Configuration** | `src/config.rs` | TOML serializer and persistent configuration manager. |
-
----
-
-## 4. Precision Touchpad & Gesture System
-
-### 4-Finger Swipe Up (Summon & Task View Interception)
-In standard Windows 10/11, swiping 4 fingers upward triggers the native **Windows Task View** (Virtual Desktops / App View). Winscroller 2d Appview eliminates this conflict using a dual-layer interception architecture:
-
-1. **Kernel Hook Layer (`WH_KEYBOARD_LL`)**:
-   - Installed using `SetWindowsHookExW` with a valid module handle via `GetModuleHandleW(None)`.
-   - When the Windows Precision Touchpad driver synthesizes `Win + Tab` or `Ctrl + Win + Up`, the hook captures the event in `< 1ms`, delivers `GestureCommand::Toggle` to Winscroller, and returns `LRESULT(1)`.
-   - Returning `1` consumes the key sequence before DWM (Desktop Window Manager) or Explorer can register it, completely suppressing the default Task View.
-2. **WinEvent Fallback Layer (`SetWinEventHook`)**:
-   - In case a proprietary touchpad driver or DWM bypasses keyboard synthesis and invokes Task View directly, an out-of-context WinEvent hook listens for `EVENT_SYSTEM_FOREGROUND`.
-   - If a window matching class `MultitaskingViewBackgroundHost` or `XamlExplorerHostIslandWindow` attempts to gain focus, it is immediately closed via `PostMessageW(WM_CLOSE)` and <kbd>Esc</kbd>, and Winscroller 2d Appview is summoned in its place.
-
-### 4-Finger Swipe Down & Escape (Dismissal)
-- **Trackpad 4-Finger Down**: Intercepts `Win + D` or `Ctrl + Win + Down`. When Winscroller is active, it consumes the event (`LRESULT(1)`) so open desktop applications are not minimized, and initiates the smooth spring exit animation.
-- **Escape Key (<kbd>Esc</kbd>)**: If a search query is active, clears the search text; if empty, smoothly closes the launcher.
-- **Downward Touch Drag**: Swiping downward anywhere on the grid or trackpad (`vertical_drag_accum > 50.0`) triggers smooth dismissal.
-- **Backdrop Click**: Clicking on empty blurred wallpaper dismisses the view.
-
-### Two-Finger Continuous Swiping & Momentum
-- Swiping two fingers horizontally on a Precision Touchpad delivers horizontal wheel deltas (`delta.x`) and smooth scroll vectors.
-- Winscroller tracks a fractional coordinate: `page_offset: f32`.
-- As you swipe, the current page slides smoothly in real time while the neighboring page slides into view with distance-based alpha attenuation.
-- Fling gestures calculate release velocity:
-  $$\text{Target Page} = \begin{cases} \text{page} + 1 & \text{if } v > 1.2 \\ \text{page} - 1 & \text{if } v < -1.2 \\ \text{round}(\text{offset}) & \text{otherwise} \end{cases}$$
-- Releasing the trackpad engages spring-damper snapping to glide into the target page.
-
----
-
-## 5. Visual & Physics Aesthetics
-
-### Damped Harmonic Oscillator (Spring & Bounce)
-All transitions in Winscroller 2d Appview are driven by an underdamped harmonic oscillator simulation computed each frame:
-
-$$m\ddot{x} + c\dot{x} + k(x - x_{\text{target}}) = 0$$
-
-- **Entrance Spring**: Stiffness $k = 220.0$, Damping $c = 17.5$.
-  - Scales the app grid from `0.91` up to `1.025` (overshoot bounce) before settling rock-solid at `1.00`.
-- **Page Snapping Spring**: Stiffness $k = 180.0$, Damping $c = 19.0$.
-  - Provides natural deceleration and elastic boundary resistance when scrolling past the first or last page.
-
-### Borderless Icon Selection Highlight
-Unlike traditional UI frameworks that draw harsh rectangular bounding boxes around selected items, Winscroller 2d Appview implements an authentic Launchpad aesthetic:
-- **No Border Strokes**: Completely avoids rectangular outlines, outlines on glow capsules, or heavy bounding cards.
-- **Icon Scale Spring**: Hovering or selecting an icon scales it up smoothly to **1.10x**.
-- **Soft Ambient Halo**: Renders a borderless, soft diffuse squircle wash strictly behind the icon graphic (`render_icon_size + 14.0`) using translucent white (`rgba(255, 255, 255, 0.14)`).
-- **Subtle Text Capsule**: The label text below sits cleanly with an optional subtle pill badge and dark drop shadows for contrast against bright wallpapers.
-
-### Dynamic Frosted Wallpaper Acrylic Blur
-1. Reads `%APPDATA%\Microsoft\Windows\Themes\TranscodedWallpaper`.
-2. Downscales the image to $640 \times 360$ for optimal GPU memory bandwidth and cache locality.
-3. Applies a vectorized, high-performance 2-pass box blur that closely approximates Gaussian blur.
-4. Tints the blurred background with a deep acrylic vignette (`rgba(12, 16, 26, 0.55)`), ensuring light or dark application icons remain vibrant and readable.
-
-### High-DPI Unplated Icon Extraction Pipeline
-Traditional Windows icon extraction frequently suffers from two flaws:
-1. Windows Shell wraps Win32 icons in an ugly Start Menu square tile with a diagonal sheen if unplated flags are not specified.
-2. Older 24-bit GDI icons leave the alpha channel as 0, which naive decoders treat as solid black, generating black boxes around apps like Command Prompt, Dev Home, and Magnifier.
-
-**Winscroller 2d Appview resolves this completely**:
-- Uses `SIIGBF_ICONONLY | SIIGBF_BIGGERSIZEOK | SIIGBF_SCALEUP` (requesting unplated $256 \times 256$ assets).
-- In `hbitmap_to_rgba`, pure black pixels `(0, 0, 0)` in non-alpha GDI bitmaps are preserved as transparent (`alpha = 0`), while colored icon pixels are converted to opaque (`alpha = 255`).
-- The graphic bounding box is calculated to crop empty margins, then resampled using high-quality **Lanczos3 filtering** to fill 90% of the canvas.
-- Extracted icons are persistently cached in `%LOCALAPPDATA%\Winscroller2dAppview\icon_cache_v1\`.
-
----
-
-## 6. Installation & Deployment Manual
-
-### Prerequisites
-- **Operating System**: Windows 10 (version 1809+) or Windows 11 (64-bit).
-- **Hardware**: Any x86_64 PC (laptops with Windows Precision Touchpad will enjoy native multi-finger swipe gestures; desktop PCs use mouse wheel and drag gestures).
-- **Build Tools** (only if building from source):
-  - Rust toolchain (`stable-x86_64-pc-windows-gnu` or `stable-x86_64-pc-windows-msvc`).
-
-### Pre-compiled Release Binary
-The fully compiled, standalone executable is located at:
+```text
+  ┌───────────────────────── Winscroller 2d Appview ─────────────────────────┐
+  │                                                                          │
+  │                    [ 🔍 Search applications...     73 apps ]             │
+  │                                                                          │
+  │     [App]     [App]     [App]     ( ★ VS Code )     [App]     [App]     │
+  │     Brave     Calc      Term       1.10x Halo       Edge     Obsidian    │
+  │                                                                          │
+  │     [App]     [App]     [App]        [App]          [App]     [App]     │
+  │     Docker    GitHub    Spotify      Notepad        Media     Settings   │
+  │                                                                          │
+  │              ◄── 2-Finger Continuous Swipe & Spring Snap ──►             │
+  │                                  ( ━━━  ○  ○ )                           │
+  └──────────────────────────────────────────────────────────────────────────┘
 ```
-d:\Projects\App overview\target\release\winscroller-2d-appview.exe
-```
-This binary is completely standalone. It requires no DLL installations, runtimes, or external frameworks.
 
-### Building from Source
+---
 
-To compile the latest release binary from the project directory:
+## Visual Overview & Architectural Concepts
+
+### Architectural Concepts & System Mechanics
+
+| 2D Launchpad Grid & Borderless Icon Halo | 4-Finger Gestures & Task View Suppression |
+|:---:|:---:|
+| ![2D Launchpad Grid](docs/assets/concept-launchpad-grid.svg) | ![4-Finger Gestures & Hook](docs/assets/concept-gestures-hook.svg) |
+| *Screen-filling 7×5 grid, 1.10x scale & borderless ambient halo* | *Dual-layer `WH_KEYBOARD_LL` + `SetWinEventHook` replaces Task View* |
+
+| Underdamped Mass-Spring Physics ($F = -kx - cv$) | High-DPI Unplated Shell Icon Pipeline |
+|:---:|:---:|
+| ![Spring Physics](docs/assets/concept-spring-physics.svg) | ![Icon Extraction Pipeline](docs/assets/concept-icon-pipeline.svg) |
+| *Snappy entrance bounce (`0.91 → 1.025 → 1.00`) & fling page snap* | *`SIIGBF_ICONONLY`, GDI 0-alpha fix, auto-crop & Lanczos3 caching* |
+
+| Dynamic `TranscodedWallpaper` 2-Pass Blur | Alfred-Style Multi-Tier Fuzzy Search |
+|:---:|:---:|
+| ![Wallpaper Blur Pipeline](docs/assets/concept-wallpaper-blur.svg) | ![Fuzzy Search Scoring](docs/assets/concept-fuzzy-search.svg) |
+| *Fast $O(W \cdot H)$ separable box blur + dark frosted acrylic tint* | *Prefix, camelCase initials (`vsc`), AppID & substring ranking* |
+
+---
+
+## Core Features
+
+- **Seamless Native System Tray Overlay (Zero Taskbar Clutter)**:
+  - Runs unobtrusively in the Windows notification tray (`Shell_NotifyIconW`) with no taskbar button (`with_taskbar(false)`).
+  - Right-click context menu for **Open**, **Edit Configuration**, **Reload Installed Apps**, and **Exit**.
+- **Native 4-Finger Touchpad Gestures (Stops Windows Task View)**:
+  - **4-Finger Swipe Up**: Dual-layer interception (`WH_KEYBOARD_LL` with valid `GetModuleHandleW` + `SetWinEventHook` Task View monitor) suppresses Windows Task View and opens **Winscroller 2d Appview** in under 1 millisecond.
+  - **4-Finger Swipe Down / <kbd>Esc</kbd>**: Suppresses desktop minimization when open and plays the smooth spring dismissal animation.
+  - **Fallback Hotkey**: <kbd>Alt</kbd> + <kbd>Space</kbd> registered globally via `RegisterHotKey`.
+- **Continuous Two-Finger Page Swiping & Fling Momentum**:
+  - Tracks fractional `page_offset: f32` during two-finger horizontal trackpad scrolls or pointer drags.
+  - Adjacent pages slide seamlessly across the display with distance-based alpha fade, velocity fling detection, and spring-damper snapping.
+  - Morphing pagination indicator pills interpolate width and color in real time.
+- **Borderless Icon Selection Highlight**:
+  - Zero stroke borders or giant tile boxes.
+  - Hovered/selected icons gently scale up **1.10x** with a soft, borderless translucent squircle wash strictly behind the icon glyph and a subtle label pill.
+- **Crystal-Clear Unplated Icons & Dynamic Wallpaper Blur**:
+  - Extracts unplated 256×256 icons via `IShellItemImageFactory` (`SIIGBF_ICONONLY | SIIGBF_BIGGERSIZEOK | SIIGBF_SCALEUP`), repairs legacy GDI 0-alpha black backgrounds, crops empty margins, and caches Lanczos3-scaled PNGs to `%LOCALAPPDATA%\Winscroller2dAppview\icon_cache_v1\`.
+  - Automatically loads `%APPDATA%\Microsoft\Windows\Themes\TranscodedWallpaper` and applies a 2-pass box blur + dark acrylic tint (`rgba(14, 18, 30, 0.55)`).
+- **Clutter-Free App Scanner & Alfred-Style Search**:
+  - Scans both UWP/MSIX packages (`Get-StartApps`) and Start Menu `.lnk` shortcuts while filtering out administrative clutter (`dfrgui`, `Event Viewer`, `Computer Management`, uninstallers, private browsing duplicates).
+
+---
+
+## Installation Guide (Step-by-Step)
+
+### 1. Prerequisites (Clean Windows 10 / 11 Machine)
+Windows does **not** include Git or Rust by default. On a fresh PC, open an **Administrator PowerShell** prompt and run:
 
 ```powershell
-# 1. Navigate to the project directory
-cd "d:\Projects\App overview"
+# 1. Install Git for Windows
+winget install --id Git.Git --accept-package-agreements --accept-source-agreements
 
-# 2. Build with maximum optimizations
-cargo build --release
+# 2. Install Rust toolchain (Rustup)
+winget install --id Rustlang.Rustup --accept-package-agreements --accept-source-agreements
 
-# 3. The output executable will be placed in:
-# .\target\release\winscroller-2d-appview.exe
+# 3. Install MSVC C++ Build Tools (or LLVM-MinGW for GNU target)
+winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-### Configuring Autostart with Windows
+> [!IMPORTANT]
+> **Restart Your Terminal**: After running the `winget` commands above, close and reopen PowerShell so `git`, `cargo`, and `rustc` are active on your `PATH`.
 
-To have Winscroller 2d Appview start silently in the background whenever you log into Windows:
+### 2. Clone the Repository
+```powershell
+git clone https://github.com/fruitsaladwindowsai-zammy/App-overview.git
+cd "App-overview"
+```
 
-#### Method A: Windows Startup Folder (Recommended)
-1. Press <kbd>Win</kbd> + <kbd>R</kbd>, type `shell:startup`, and press <kbd>Enter</kbd>.
-2. Right-click inside the folder, select **New** → **Shortcut**.
-3. Browse to `d:\Projects\App overview\target\release\winscroller-2d-appview.exe`.
-4. Name the shortcut `Winscroller 2d Appview` and click **Finish**.
+### 3. Build & Run the Release Binary
+```powershell
+cargo build --release
+& ".\target\release\winscroller-2d-appview.exe"
+```
 
-#### Method B: PowerShell Script (One-Click Setup)
-Run this command in Windows PowerShell:
+### 4. Auto-Start with Windows (Optional)
+Run this one-liner in PowerShell to add **Winscroller 2d Appview** to your Windows Startup folder:
 ```powershell
 $WshShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\Winscroller2dAppview.lnk")
-$Shortcut.TargetPath = "d:\Projects\App overview\target\release\winscroller-2d-appview.exe"
-$Shortcut.WorkingDirectory = "d:\Projects\App overview\target\release"
-$Shortcut.WindowStyle = 7 # Minimized
+$Shortcut.TargetPath = (Resolve-Path ".\target\release\winscroller-2d-appview.exe").Path
+$Shortcut.WorkingDirectory = (Resolve-Path ".\target\release").Path
 $Shortcut.Save()
-Write-Host "Winscroller 2d Appview has been added to Windows Startup!" -ForegroundColor Green
 ```
 
 ---
 
-## 7. User Manual & Navigation Controls
+## Controls & Gestures Quick Reference
 
-### Quick Reference Guide
+| Action | Gesture / Shortcut |
+|---|---|
+| **Summon Overview** | **4-Finger Swipe Up** (stops Task View) or <kbd>Alt</kbd> + <kbd>Space</kbd> or **Click Tray Icon** |
+| **Dismiss Overview** | **4-Finger Swipe Down** or <kbd>Esc</kbd> or **Drag Down** or **Click Wallpaper** |
+| **Slide Between Pages** | **2-Finger Horizontal Swipe** or **Mouse Wheel / Pointer Drag** |
+| **Jump to Page** | **Click Bottom Pagination Pill** or <kbd>PageUp</kbd> / <kbd>PageDown</kbd> |
+| **Fuzzy Search** | **Start typing anywhere** (e.g. `vsc`, `cmd`, `chr`) |
+| **Grid Navigation** | <kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> (auto-rolls over pages) |
+| **Launch App** | <kbd>Enter</kbd> or **Left-Click Icon** |
 
-| Action | Control / Gesture | Description |
-|---|---|---|
-| **Summon Launcher** | **4-Finger Swipe Up** | Swiping four fingers upward on your touchpad opens Winscroller and suppresses Task View. |
-| **Summon (Keyboard)** | <kbd>Alt</kbd> + <kbd>Space</kbd> | Global hotkey to toggle Winscroller from anywhere in Windows. |
-| **Summon (Mouse/Tray)** | **Click Tray Icon** | Single left-click or double-click the notification tray icon (near the clock). |
-| **Dismiss Launcher** | **4-Finger Swipe Down** | Swiping four fingers downward dismisses Winscroller smoothly with bounce. |
-| **Dismiss (Keyboard)** | <kbd>Esc</kbd> | Closes the launcher (or clears search query if text is entered). |
-| **Dismiss (Mouse/Touch)**| **Click Backdrop / Drag Down** | Clicking the blurred wallpaper or dragging downward dismisses the view. |
-| **Browse Pages** | **2-Finger Swipe Left / Right** | Continuous trackpad swipe slides pages with momentum and spring snapping. |
-| **Browse (Mouse)** | **Scroll Wheel or Drag** | Scroll the mouse wheel or drag anywhere across the screen. |
-| **Page Jump** | **Click Pagination Pill** | Click any dot/pill at the bottom to jump directly to that page. |
-| **Search Apps** | **Type any key** | Searches instantly with Alfred-style scoring (e.g. `c` for Chrome, `cmd` for Command Prompt). |
-| **Navigate Grid** | **Arrow Keys** | Moves the selection cursor smoothly across apps and pages. |
-| **Launch Application** | <kbd>Enter</kbd> or **Click Icon** | Launches the chosen app and smoothly dismisses Winscroller. |
-| **Tray Context Menu** | **Right-Click Tray Icon** | Access options to Open, Edit Configuration, Reload Apps, or Exit. |
+See [KEYBINDINGS.md](KEYBINDINGS.md) and [USAGE.md](USAGE.md) for the complete control guide.
 
 ---
 
-## 8. Configuration Guide (`config.toml`)
+## Configuration (`%APPDATA%\Winscroller2dAppview\config.toml`)
 
-The application's persistent settings are stored at:
-```
-%APPDATA%\Winscroller2dAppview\config.toml
-```
+Copy [winscroller-2d-appview.example.toml](winscroller-2d-appview.example.toml) or right-click the tray icon → **Edit Configuration**:
 
-You can edit this file directly in Notepad by right-clicking the system tray icon and selecting **⚙ Edit Configuration**, or by opening the file path manually.
-
-### Default Configuration
 ```toml
-# Winscroller 2d Appview Configuration
-
-# Number of columns in the grid (minimum: 3, recommended: 7 for 1080p/1440p)
 columns = 7
-
-# Number of rows in the grid (minimum: 2, recommended: 5)
 rows = 5
-
-# Base icon size in pixels (64.0 - 96.0)
 icon_size = 76.0
-
-# Whether application names are displayed underneath icons
 show_labels = true
-
-# Backdrop style: "Wallpaper" (reads Windows wallpaper) or "Dark"
-backdrop = "Wallpaper"
-
-# Centered mode: false for fullscreen Launchpad, true for floating centered card
-centered = false
-
-# Width fraction of screen in centered mode (0.4 - 0.95)
+backdrop = "Wallpaper"    # "Wallpaper" or "Centered"
+centered = false          # false = Fullscreen Launchpad, true = Floating Glass Card
 card_width = 0.75
-
-# Height fraction of screen in centered mode (0.4 - 0.95)
 card_height = 0.80
-
-# Whether search bar glow effects are enabled
 glow = true
-
-# Accent highlight color (Hex RGB/RGBA string)
-accent_color = "#89b4fa"
-
-# Global keyboard shortcut
+accent_color = "#89b4fa"  # Catppuccin Blue (#89b4fa), Cyan (#00f5d4), Lavender (#cba6f7)
 hotkey = "Alt+Space"
 ```
 
----
-
-## 9. Troubleshooting & FAQs
-
-### Q1: 4-Finger gesture still opens Windows Task View occasionally.
-**Resolution**:
-1. Open Windows **Settings** (<kbd>Win</kbd> + <kbd>I</kbd>) → **Bluetooth & devices** → **Touchpad**.
-2. Scroll to **Four-finger gestures** (or **Advanced gestures**).
-3. Ensure that touchpad gestures are enabled.
-4. Winscroller 2d Appview automatically intercepts `Win + Tab` via `WH_KEYBOARD_LL` and terminates Task View window instances via `SetWinEventHook`.
-
-### Q2: Some icons are missing or need a refresh.
-**Resolution**:
-1. Right-click the system tray icon near your taskbar clock.
-2. Click **🔄 Reload Installed Apps**.
-3. To perform a completely clean re-extraction of all icons, delete the icon cache folder:
-   ```powershell
-   Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Winscroller2dAppview\icon_cache_v1"
-   ```
-
-### Q3: How do I completely exit the application?
-**Resolution**:
-Right-click the system tray icon (near the clock) and click **❌ Exit Winscroller 2d Appview**. You can also terminate it from Windows Task Manager under the process name `winscroller-2d-appview.exe`.
+See [CONFIGURATION.md](CONFIGURATION.md) for full options and profiles.
 
 ---
-*Built with native Rust for the ultimate Windows application launch experience.*
+
+## Documentation & Project Files
+
+- [USAGE.md](USAGE.md) — Daily workflows, gesture tips, and tray daemon guide
+- [KEYBINDINGS.md](KEYBINDINGS.md) — Complete shortcut, gesture, and mouse reference
+- [CONFIGURATION.md](CONFIGURATION.md) — Full `config.toml` schema & presets
+- [CHANGELOG.md](CHANGELOG.md) — Version history
+- [RELEASE_NOTES.md](RELEASE_NOTES.md) — v0.1.0 release highlights
+- [CONTRIBUTING.md](CONTRIBUTING.md) — Development setup, testing & PR checklist
+- [SECURITY.md](SECURITY.md) — Hook & privacy model, vulnerability reporting
+- [docs/](docs/README.md) — mdBook documentation site source
+- [wiki/](wiki/Home.md) — GitHub Wiki pages & sidebar
+- `website/serve.ps1` — Local interactive showcase website & Live Launchpad Simulator
+
+---
+
+## License
+
+Licensed under the [MIT License](LICENSE).

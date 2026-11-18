@@ -1,0 +1,15 @@
+[book]
+title = "Winscroller 2d Appview"
+description = "Native Windows 10/11 Launchpad-style 2D Application Overview with 4-finger touchpad gestures, spring physics, and frosted wallpaper blur"
+authors = ["Winscroller 2d Appview contributors"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/fruitsaladwindowsai-zammy/App-overview"
+edit-url-template = "https://github.com/fruitsaladwindowsai-zammy/App-overview/edit/master/docs/{path}"

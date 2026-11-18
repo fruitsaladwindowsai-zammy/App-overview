@@ -1,0 +1,71 @@
+# ==============================================================================
+# Winscroller 2d Appview — Example Configuration File
+# ==============================================================================
+# Copy this file to:
+#   %APPDATA%\Winscroller2dAppview\config.toml
+#
+# Or right-click the Winscroller 2d Appview system tray icon -> "Edit Configuration".
+# Restart Winscroller 2d Appview (or reload from tray) after editing grid geometry.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Grid Layout Geometry
+# ------------------------------------------------------------------------------
+# Number of application columns per page (minimum: 3).
+# Recommended: 7 for 1080p/1440p, 8-9 for ultrawide monitors.
+columns = 7
+
+# Number of application rows per page (minimum: 2).
+# Recommended: 5 for full Launchpad, 4 for centered floating card.
+rows = 5
+
+# Base icon size in logical pixels (clamped between 64.0 and 96.0).
+# Hovered/selected icons smoothly scale up by 1.10x from this base size.
+icon_size = 76.0
+
+# Display application names underneath each icon with contrast drop shadows.
+show_labels = true
+
+# ------------------------------------------------------------------------------
+# Backdrop & Presentation Mode
+# ------------------------------------------------------------------------------
+# Backdrop rendering style:
+#   "Wallpaper" - Reads %APPDATA%\Microsoft\Windows\Themes\TranscodedWallpaper,
+#                 applies a 2-pass box blur + dark frosted acrylic vignette.
+#   "Centered"  - Renders inside a floating rounded dark glass card over the
+#                 dimmed desktop wallpaper (equivalent to centered = true).
+backdrop = "Wallpaper"
+
+# Presentation surface toggle:
+#   false - Fullscreen edge-to-edge macOS Launchpad overlay (default).
+#   true  - Centered floating glass card over the blurred wallpaper.
+centered = false
+
+# Fraction of screen width occupied by the floating card when centered = true (0.4 - 0.95).
+card_width = 0.75
+
+# Fraction of screen height occupied by the floating card when centered = true (0.4 - 0.95).
+card_height = 0.80
+
+# ------------------------------------------------------------------------------
+# Accent & Glow Aesthetics
+# ------------------------------------------------------------------------------
+# Enable subtle focus glow around the translucent search bar pill.
+glow = true
+
+# Accent highlight color in hex (#RRGGBB or #RRGGBBAA).
+# Used for search focus ring, blinking caret, and active pagination pill.
+# Presets:
+#   Catppuccin Blue     : "#89b4fa" (default)
+#   Electric Cyan       : "#00f5d4"
+#   Soft Lavender       : "#cba6f7"
+#   Mint Emerald        : "#a6e3a1"
+#   Warm Peach          : "#fab387"
+accent_color = "#89b4fa"
+
+# ------------------------------------------------------------------------------
+# Global Hotkey Fallback
+# ------------------------------------------------------------------------------
+# Primary trigger is 4-Finger Swipe Up (auto-intercepts Windows Task View).
+# Global keyboard fallback shortcut registered via RegisterHotKey:
+hotkey = "Alt+Space"

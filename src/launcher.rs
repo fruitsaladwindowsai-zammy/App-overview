@@ -23,14 +23,7 @@ pub fn launch_app(target: &str) -> bool {
         let op = HSTRING::from("open");
         let file = HSTRING::from(target);
 
-        let result = ShellExecuteW(
-            HWND(0),
-            &op,
-            &file,
-            None,
-            None,
-            SW_SHOWNORMAL,
-        );
+        let result = ShellExecuteW(HWND(0), &op, &file, None, None, SW_SHOWNORMAL);
 
         // ShellExecute returns an HINSTANCE > 32 on success
         (result.0 as usize) > 32

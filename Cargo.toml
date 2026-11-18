@@ -2,7 +2,13 @@
 name = "winscroller-2d-appview"
 version = "0.1.0"
 edition = "2021"
-description = "A fullscreen Launchpad-style app launcher for Windows - Winscroller 2d Appview"
+license = "MIT"
+authors = ["Winscroller 2d Appview contributors"]
+description = "A native fullscreen & floating Launchpad-style 2D application launcher for Windows 10/11 with 4-finger touchpad gestures, spring physics, and frosted wallpaper blur"
+repository = "https://github.com/fruitsaladwindowsai-zammy/App-overview"
+readme = "README.md"
+keywords = ["windows", "launcher", "launchpad", "touchpad", "rust"]
+categories = ["os::windows-apis", "gui"]
 
 [lib]
 name = "winscroller_2d_appview"

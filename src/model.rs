@@ -33,11 +33,9 @@ pub fn words(text: &str) -> Vec<String> {
 
     for c in text.chars() {
         if let Some(prev) = prev_char {
-            if prev.is_lowercase() && c.is_uppercase() {
-                if !current_word.is_empty() {
-                    result.push(current_word.to_lowercase());
-                    current_word.clear();
-                }
+            if prev.is_lowercase() && c.is_uppercase() && !current_word.is_empty() {
+                result.push(current_word.to_lowercase());
+                current_word.clear();
             }
         }
 
@@ -61,16 +59,9 @@ impl AppEntry {
     pub fn search_fields(&self) -> SearchFields {
         let name_folded = fold(&self.name);
         let name_words = words(&self.name);
-        let initials = name_words
-            .iter()
-            .filter_map(|w| w.chars().next())
-            .collect();
+        let initials = name_words.iter().filter_map(|w| w.chars().next()).collect();
         let id_words = words(&self.id);
-        let tag_words = self
-            .keywords
-            .iter()
-            .flat_map(|k| words(k))
-            .collect();
+        let tag_words = self.keywords.iter().flat_map(|k| words(k)).collect();
 
         SearchFields {
             name_folded,
@@ -145,7 +136,7 @@ pub fn page_count(total_items: usize, columns: usize, rows: usize) -> usize {
     if pp == 0 || total_items == 0 {
         1
     } else {
-        (total_items + pp - 1) / pp
+        total_items.div_ceil(pp)
     }
 }
 
@@ -214,4 +205,67 @@ pub enum MoveDirection {
     Right,
     Up,
     Down,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_app(id: &str, name: &str) -> AppEntry {
+        AppEntry {
+            id: id.to_string(),
+            name: name.to_string(),
+            target: format!("shell:AppsFolder\\{}", id),
+            is_uwp: true,
+            keywords: vec![name.to_string()],
+        }
+    }
+
+    #[test]
+    fn test_words_splits_camel_case_and_punctuation() {
+        assert_eq!(
+            words("Visual Studio Code"),
+            vec!["visual", "studio", "code"]
+        );
+        assert_eq!(words("WinScroller2D"), vec!["win", "scroller2d"]);
+        assert_eq!(words("App-Overview_v1"), vec!["app", "overview", "v1"]);
+    }
+
+    #[test]
+    fn test_fuzzy_scoring_ranking() {
+        let vscode = sample_app("Microsoft.VSCode", "Visual Studio Code");
+        let cmd = sample_app("System32.cmd", "Command Prompt");
+        let chrome = sample_app("Google.Chrome", "Google Chrome");
+
+        // Exact prefix match beats substring/initials
+        assert!(score_entry(&chrome, "goo") > score_entry(&chrome, "chr"));
+        // Acronym / initials matching ("vsc" -> Visual Studio Code)
+        assert!(score_entry(&vscode, "vsc") > 0);
+        // Non-matching query returns negative score
+        assert_eq!(score_entry(&cmd, "firefox"), -1);
+    }
+
+    #[test]
+    fn test_pagination_math() {
+        assert_eq!(per_page(7, 5), 35);
+        assert_eq!(page_count(0, 7, 5), 1);
+        assert_eq!(page_count(35, 7, 5), 1);
+        assert_eq!(page_count(36, 7, 5), 2);
+        assert_eq!(page_count(73, 7, 5), 3);
+    }
+
+    #[test]
+    fn test_grid_navigation_page_rollover() {
+        // Moving right from the rightmost column (col 6 on page 0) jumps to col 0 on page 1
+        let next = move_selection(6, MoveDirection::Right, 70, 7, 5);
+        assert_eq!(next, 35);
+
+        // Moving left from col 0 on page 1 jumps back to col 6 on page 0
+        let prev = move_selection(35, MoveDirection::Left, 70, 7, 5);
+        assert_eq!(prev, 6);
+
+        // Vertical navigation within page
+        assert_eq!(move_selection(0, MoveDirection::Down, 70, 7, 5), 7);
+        assert_eq!(move_selection(7, MoveDirection::Up, 70, 7, 5), 0);
+    }
 }

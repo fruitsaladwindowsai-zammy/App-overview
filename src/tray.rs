@@ -1,13 +1,13 @@
 // Windows System Notification Tray
-use std::sync::mpsc::Sender;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::thread;
 
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
 use windows::Win32::UI::Shell::{
-    Shell_NotifyIconW, NOTIFYICONDATAW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE,
+    Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu, DestroyWindow,
@@ -68,17 +68,43 @@ impl TrayManager {
 
                             let menu = CreatePopupMenu();
                             if let Ok(hmenu) = menu {
-                                let open_title: Vec<u16> = "🚀 Open Winscroller 2d Appview\tAlt+Space\0".encode_utf16().collect();
-                                let config_title: Vec<u16> = "⚙ Edit Configuration\0".encode_utf16().collect();
-                                let reload_title: Vec<u16> = "🔄 Reload Installed Apps\0".encode_utf16().collect();
-                                let exit_title: Vec<u16> = "❌ Exit Winscroller 2d Appview\0".encode_utf16().collect();
+                                let open_title: Vec<u16> =
+                                    "🚀 Open Winscroller 2d Appview\tAlt+Space\0"
+                                        .encode_utf16()
+                                        .collect();
+                                let config_title: Vec<u16> =
+                                    "⚙ Edit Configuration\0".encode_utf16().collect();
+                                let reload_title: Vec<u16> =
+                                    "🔄 Reload Installed Apps\0".encode_utf16().collect();
+                                let exit_title: Vec<u16> =
+                                    "❌ Exit Winscroller 2d Appview\0".encode_utf16().collect();
 
-                                let _ = AppendMenuW(hmenu, MF_STRING, IDM_OPEN, PCWSTR(open_title.as_ptr()));
+                                let _ = AppendMenuW(
+                                    hmenu,
+                                    MF_STRING,
+                                    IDM_OPEN,
+                                    PCWSTR(open_title.as_ptr()),
+                                );
                                 let _ = AppendMenuW(hmenu, MF_SEPARATOR, 0, None);
-                                let _ = AppendMenuW(hmenu, MF_STRING, IDM_SETTINGS, PCWSTR(config_title.as_ptr()));
-                                let _ = AppendMenuW(hmenu, MF_STRING, IDM_RELOAD, PCWSTR(reload_title.as_ptr()));
+                                let _ = AppendMenuW(
+                                    hmenu,
+                                    MF_STRING,
+                                    IDM_SETTINGS,
+                                    PCWSTR(config_title.as_ptr()),
+                                );
+                                let _ = AppendMenuW(
+                                    hmenu,
+                                    MF_STRING,
+                                    IDM_RELOAD,
+                                    PCWSTR(reload_title.as_ptr()),
+                                );
                                 let _ = AppendMenuW(hmenu, MF_SEPARATOR, 0, None);
-                                let _ = AppendMenuW(hmenu, MF_STRING, IDM_EXIT, PCWSTR(exit_title.as_ptr()));
+                                let _ = AppendMenuW(
+                                    hmenu,
+                                    MF_STRING,
+                                    IDM_EXIT,
+                                    PCWSTR(exit_title.as_ptr()),
+                                );
 
                                 let _ = SetForegroundWindow(hwnd);
                                 let _ = TrackPopupMenu(
@@ -96,7 +122,7 @@ impl TrayManager {
                         LRESULT(0)
                     }
                     WM_COMMAND => {
-                        let id = (wparam.0 & 0xffff) as usize;
+                        let id = wparam.0 & 0xffff;
                         if let Some(ref s) = GLOBAL_SENDER {
                             match id {
                                 IDM_OPEN => {
@@ -113,7 +139,7 @@ impl TrayManager {
                                 }
                                 IDM_EXIT => {
                                     let _ = s.send(TrayCommand::Exit);
-                                    let _ = PostQuitMessage(0);
+                                    PostQuitMessage(0);
                                 }
                                 _ => {}
                             }

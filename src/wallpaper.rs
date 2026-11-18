@@ -1,7 +1,7 @@
 // Desktop Wallpaper Capture and Frosted Blur
+use image::{imageops, RgbaImage};
 use std::path::PathBuf;
 use std::thread;
-use image::{imageops, RgbaImage};
 
 pub struct BlurredWallpaper {
     pub width: u32,

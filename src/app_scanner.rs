@@ -1,9 +1,9 @@
 // App scanner for Windows installed applications
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
-use serde::Deserialize;
 use walkdir::WalkDir;
 
 use crate::model::AppEntry;
@@ -25,7 +25,12 @@ pub fn scan_installed_apps() -> Vec<AppEntry> {
 
     // 1. Scan via Get-StartApps (covers UWP, MSIX, and registered desktop apps)
     if let Ok(output) = Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-Command", "Get-StartApps | ConvertTo-Json -Compress"])
+        .args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "Get-StartApps | ConvertTo-Json -Compress",
+        ])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
     {
@@ -94,7 +99,7 @@ pub fn scan_installed_apps() -> Vec<AppEntry> {
     }
 
     // Sort alphabetically by name
-    apps.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    apps.sort_by_key(|a| a.name.to_lowercase());
 
     apps
 }

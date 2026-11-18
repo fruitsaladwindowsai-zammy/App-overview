@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgIcon" cx="50%" cy="50%" r="72%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="65%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#05070c"/>
+    </radialGradient>
+    <linearGradient id="gradI" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f5d4"/>
+      <stop offset="100%" stop-color="#cba6f7"/>
+    </linearGradient>
+  </defs>
+  <style>
+    text { font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif; }
+    .mono { font-family: 'Fira Code', Consolas, monospace; }
+  </style>
+
+  <rect width="1200" height="750" fill="url(#bgIcon)"/>
+
+  <!-- Header -->
+  <g transform="translate(600, 48)">
+    <rect x="-320" y="-18" width="640" height="36" rx="18" fill="rgba(14, 20, 32, 0.95)" stroke="url(#gradI)" stroke-width="1.5"/>
+    <circle cx="-294" cy="0" r="5" fill="#cba6f7"/>
+    <text x="-278" y="4" fill="#f8fafc" font-size="13" font-weight="700">High-DPI Unplated Shell Icon Extraction &amp; GDI Alpha Pipeline</text>
+    <text x="225" y="4" fill="#00f5d4" font-size="11" class="mono">256×256 PNG</text>
+  </g>
+
+  <!-- 4 Pipeline Stages -->
+  <!-- Stage 1 -->
+  <g transform="translate(45, 135)">
+    <rect width="250" height="470" rx="16" fill="#0c1322" stroke="#89b4fa" stroke-width="1.5"/>
+    <rect x="14" y="14" width="222" height="30" rx="8" fill="#152036"/>
+    <text x="125" y="34" fill="#89b4fa" font-size="11.5" font-weight="700" text-anchor="middle">1. SHELL COM EXTRACTION</text>
+    <text x="20" y="78" fill="#f8fafc" font-size="12" font-weight="700">IShellItemImageFactory</text>
+    <text x="20" y="102" fill="#94a3b8" font-size="11" class="mono">SHCreateItemFromParsingName</text>
+    <rect x="20" y="124" width="210" height="92" rx="10" fill="#111a2e" stroke="rgba(137,180,250,0.3)"/>
+    <text x="32" y="148" fill="#00f5d4" font-size="11" class="mono">SIIGBF_ICONONLY</text>
+    <text x="32" y="170" fill="#00f5d4" font-size="11" class="mono">SIIGBF_BIGGERSIZEOK</text>
+    <text x="32" y="192" fill="#00f5d4" font-size="11" class="mono">SIIGBF_SCALEUP</text>
+    <text x="20" y="246" fill="#cbd5e1" font-size="11.5">Strips Start Menu square</text>
+    <text x="20" y="264" fill="#cbd5e1" font-size="11.5">plates &amp; diagonal sheen.</text>
+    <text x="20" y="302" fill="#94a3b8" font-size="11">Supports both:</text>
+    <text x="20" y="324" fill="#e2e8f0" font-size="11" class="mono">• shell:AppsFolder\*</text>
+    <text x="20" y="344" fill="#e2e8f0" font-size="11" class="mono">• Start Menu *.lnk</text>
+    <rect x="20" y="384" width="210" height="58" rx="10" fill="rgba(74, 222, 128, 0.1)" stroke="rgba(74, 222, 128, 0.35)"/>
+    <text x="125" y="410" fill="#4ade80" font-size="11" font-weight="700" text-anchor="middle">Direct Screen DC GetDIBits</text>
+    <text x="125" y="428" fill="#bbf7d0" font-size="10.5" class="mono" text-anchor="middle">Zero GDI DC corruption</text>
+  </g>
+
+  <path d="M 300 370 L 330 370" stroke="#00f5d4" stroke-width="2.5"/>
+  <polygon points="328,364 338,370 328,376" fill="#00f5d4"/>
+
+  <!-- Stage 2 -->
+  <g transform="translate(340, 135)">
+    <rect width="250" height="470" rx="16" fill="#0c1322" stroke="#00f5d4" stroke-width="1.5"/>
+    <rect x="14" y="14" width="222" height="30" rx="8" fill="#152036"/>
+    <text x="125" y="34" fill="#00f5d4" font-size="11.5" font-weight="700" text-anchor="middle">2. GDI ALPHA CORRECTION</text>
+
+    <!-- Before / After visual -->
+    <rect x="30" y="68" width="84" height="84" rx="10" fill="#000000" stroke="#f43f5e" stroke-width="1.5"/>
+    <rect x="56" y="94" width="32" height="32" rx="4" fill="#38bdf8"/>
+    <text x="72" y="172" fill="#fb7185" font-size="10.5" font-weight="700" text-anchor="middle">Legacy (Black Box)</text>
+
+    <rect x="136" y="68" width="84" height="84" rx="10" fill="rgba(255,255,255,0.06)" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <rect x="148" y="80" width="60" height="60" rx="12" fill="#38bdf8"/>
+    <text x="178" y="172" fill="#4ade80" font-size="10.5" font-weight="700" text-anchor="middle">Clean Alpha</text>
+
+    <rect x="18" y="198" width="214" height="145" rx="10" fill="#111a2e"/>
+    <text x="28" y="222" fill="#cbd5e1" font-size="10.5" class="mono">BGRA → RGBA swizzle</text>
+    <text x="28" y="246" fill="#fbbf24" font-size="10.5" class="mono">if !has_non_zero_alpha:</text>
+    <text x="38" y="268" fill="#94a3b8" font-size="10.5" class="mono">if (r,g,b) == (0,0,0):</text>
+    <text x="48" y="288" fill="#00f5d4" font-size="10.5" class="mono">alpha = 0 // transparent</text>
+    <text x="38" y="310" fill="#94a3b8" font-size="10.5" class="mono">else:</text>
+    <text x="48" y="330" fill="#4ade80" font-size="10.5" class="mono">alpha = 255 // opaque</text>
+
+    <text x="20" y="376" fill="#cbd5e1" font-size="11.5">Fixes Magnifier, CMD,</text>
+    <text x="20" y="394" fill="#cbd5e1" font-size="11.5">and legacy Win32 icons</text>
+    <text x="20" y="412" fill="#cbd5e1" font-size="11.5">with 0-alpha channels.</text>
+  </g>
+
+  <path d="M 595 370 L 625 370" stroke="#00f5d4" stroke-width="2.5"/>
+  <polygon points="623,364 633,370 623,376" fill="#00f5d4"/>
+
+  <!-- Stage 3 -->
+  <g transform="translate(635, 135)">
+    <rect width="250" height="470" rx="16" fill="#0c1322" stroke="#cba6f7" stroke-width="1.5"/>
+    <rect x="14" y="14" width="222" height="30" rx="8" fill="#152036"/>
+    <text x="125" y="34" fill="#cba6f7" font-size="11.5" font-weight="700" text-anchor="middle">3. AUTO-CROP &amp; LANCZOS3</text>
+
+    <rect x="55" y="72" width="140" height="140" rx="14" fill="#111a2e" stroke="rgba(255,255,255,0.16)" stroke-dasharray="5 4"/>
+    <rect x="69" y="86" width="112" height="112" rx="18" fill="rgba(203,166,247,0.22)" stroke="#cba6f7" stroke-width="2"/>
+    <text x="125" y="147" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">90% Fill</text>
+
+    <text x="20" y="250" fill="#f8fafc" font-size="12" font-weight="700">Bounding-Box Trimming</text>
+    <text x="20" y="274" fill="#cbd5e1" font-size="11.5">Scans alpha &gt; 15 pixels</text>
+    <text x="20" y="294" fill="#cbd5e1" font-size="11.5">to find exact glyph bounds.</text>
+    <text x="20" y="328" fill="#f8fafc" font-size="12" font-weight="700">Lanczos3 Resampling</text>
+    <text x="20" y="352" fill="#cbd5e1" font-size="11.5">Preserves aspect ratio and</text>
+    <text x="20" y="372" fill="#cbd5e1" font-size="11.5">centers onto clean target</text>
+    <text x="20" y="392" fill="#cbd5e1" font-size="11.5">canvas (e.g. 76×76 px).</text>
+  </g>
+
+  <path d="M 890 370 L 920 370" stroke="#00f5d4" stroke-width="2.5"/>
+  <polygon points="918,364 928,370 918,376" fill="#00f5d4"/>
+
+  <!-- Stage 4 -->
+  <g transform="translate(930, 135)">
+    <rect width="225" height="470" rx="16" fill="#0c1322" stroke="#4ade80" stroke-width="1.5"/>
+    <rect x="14" y="14" width="197" height="30" rx="8" fill="#152036"/>
+    <text x="112" y="34" fill="#4ade80" font-size="11.5" font-weight="700" text-anchor="middle">4. DISK CACHE &amp; GPU</text>
+
+    <rect x="20" y="76" width="185" height="90" rx="12" fill="#111a2e" stroke="rgba(74,222,128,0.35)"/>
+    <text x="112" y="106" fill="#4ade80" font-size="11.5" font-weight="700" text-anchor="middle">Persistent PNG Cache</text>
+    <text x="112" y="128" fill="#cbd5e1" font-size="9.5" class="mono" text-anchor="middle">%LOCALAPPDATA%\</text>
+    <text x="112" y="144" fill="#cbd5e1" font-size="9.5" class="mono" text-anchor="middle">Winscroller2dAppview\</text>
+    <text x="112" y="158" fill="#00f5d4" font-size="9.5" class="mono" text-anchor="middle">icon_cache_v1\</text>
+
+    <text x="20" y="210" fill="#f8fafc" font-size="12" font-weight="700">Async Worker Thread</text>
+    <text x="20" y="234" fill="#cbd5e1" font-size="11.5">STA COM thread streams</text>
+    <text x="20" y="254" fill="#cbd5e1" font-size="11.5">textures over mpsc</text>
+    <text x="20" y="274" fill="#cbd5e1" font-size="11.5">without blocking UI.</text>
+
+    <rect x="20" y="320" width="185" height="114" rx="12" fill="rgba(137,180,250,0.1)" stroke="rgba(137,180,250,0.3)"/>
+    <text x="112" y="352" fill="#89b4fa" font-size="12" font-weight="700" text-anchor="middle">TextureOptions::LINEAR</text>
+    <text x="112" y="378" fill="#cbd5e1" font-size="11" text-anchor="middle">Unmultiplied RGBA8</text>
+    <text x="112" y="398" fill="#cbd5e1" font-size="11" text-anchor="middle">Zero additive clamping</text>
+    <text x="112" y="418" fill="#4ade80" font-size="11" class="mono" text-anchor="middle">Instant warm load</text>
+  </g>
+</svg>

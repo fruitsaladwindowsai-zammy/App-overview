@@ -11,8 +11,8 @@ mod tray;
 mod ui;
 mod wallpaper;
 
-use std::sync::mpsc::channel;
 use config::Config;
+use std::sync::mpsc::channel;
 use ui::SavannaApp;
 
 fn main() -> eframe::Result<()> {

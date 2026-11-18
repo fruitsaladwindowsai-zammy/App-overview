@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgPhys" cx="50%" cy="50%" r="72%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="65%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#05070c"/>
+    </radialGradient>
+    <linearGradient id="springCyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f5d4"/>
+      <stop offset="100%" stop-color="#89b4fa"/>
+    </linearGradient>
+    <filter id="waveGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <style>
+    @keyframes drawCurve {
+      0% { stroke-dashoffset: 680; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes springBlock {
+      0%, 100% { transform: translateX(0px); }
+      28% { transform: translateX(72px); }
+      48% { transform: translateX(-20px); }
+      68% { transform: translateX(8px); }
+      84% { transform: translateX(-2px); }
+    }
+    .curve { stroke-dasharray: 680; animation: drawCurve 3.6s infinite ease-out; }
+    .mass { animation: springBlock 3.8s infinite ease-in-out; }
+    text { font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif; }
+    .mono { font-family: 'Fira Code', Consolas, monospace; }
+  </style>
+
+  <rect width="1200" height="750" fill="url(#bgPhys)"/>
+
+  <!-- Header -->
+  <g transform="translate(600, 48)">
+    <rect x="-310" y="-18" width="620" height="36" rx="18" fill="rgba(14, 20, 32, 0.95)" stroke="url(#springCyan)" stroke-width="1.5"/>
+    <circle cx="-284" cy="0" r="5" fill="#00f5d4"/>
+    <text x="-268" y="4" fill="#f8fafc" font-size="13" font-weight="700">Underdamped Mass-Spring Physics (Entrance &amp; Page Snapping)</text>
+    <text x="200" y="4" fill="#00f5d4" font-size="11" class="mono">F = -kx - cv</text>
+  </g>
+
+  <!-- Left Panel: Oscillator Model -->
+  <g transform="translate(70, 115)">
+    <rect width="510" height="560" rx="18" fill="#0c1220" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+    <rect x="18" y="18" width="474" height="34" rx="8" fill="#151e32"/>
+    <text x="34" y="40" fill="#00f5d4" font-size="12" font-weight="700">DISCRETE HARMONIC OSCILLATOR</text>
+    <text x="474" y="40" fill="#89b4fa" font-size="11" class="mono" text-anchor="end">dt ∈ [1ms, 50ms]</text>
+
+    <!-- Wall + Spring + Mass -->
+    <rect x="42" y="96" width="18" height="170" rx="4" fill="#1e293b" stroke="rgba(255,255,255,0.2)"/>
+    <path d="M 60 150 L 92 150 L 106 130 L 126 170 L 146 130 L 166 170 L 186 130 L 206 170 L 222 150 L 250 150"
+          fill="none" stroke="#00f5d4" stroke-width="3" filter="url(#waveGlow)"/>
+    <text x="155" y="114" fill="#00f5d4" font-size="11" class="mono" text-anchor="middle">Stiffness k = 220</text>
+
+    <!-- Damper -->
+    <line x1="60" y1="224" x2="120" y2="224" stroke="#cba6f7" stroke-width="2.5"/>
+    <rect x="120" y="210" width="60" height="28" rx="4" fill="rgba(203,166,247,0.14)" stroke="#cba6f7" stroke-width="2"/>
+    <line x1="150" y1="224" x2="250" y2="224" stroke="#cba6f7" stroke-width="2.5"/>
+    <text x="155" y="256" fill="#cba6f7" font-size="11" class="mono" text-anchor="middle">Damping c = 17.5</text>
+
+    <!-- Moving Mass -->
+    <g class="mass">
+      <rect x="250" y="126" width="140" height="120" rx="16" fill="#162238" stroke="#89b4fa" stroke-width="2"/>
+      <text x="320" y="176" fill="#f8fafc" font-size="14" font-weight="700" text-anchor="middle">App Grid /</text>
+      <text x="320" y="198" fill="#00f5d4" font-size="13" font-weight="700" text-anchor="middle">Page Offset</text>
+      <text x="320" y="224" fill="#94a3b8" font-size="10.5" class="mono" text-anchor="middle">m = 1.0</text>
+    </g>
+
+    <!-- Tuning Table -->
+    <g transform="translate(24, 305)">
+      <rect width="462" height="228" rx="12" fill="#10182b" stroke="rgba(255,255,255,0.08)"/>
+      <text x="20" y="30" fill="#f8fafc" font-size="13" font-weight="700">Production Spring Constants (src/ui.rs)</text>
+
+      <text x="20" y="64" fill="#00f5d4" font-size="12" font-weight="700">1. Open / Dismiss Spring</text>
+      <text x="20" y="84" fill="#cbd5e1" font-size="11" class="mono">stiffness = 220.0 · damping = 17.5</text>
+      <text x="20" y="102" fill="#94a3b8" font-size="11">Scale: 0.91 → 1.025 (bounce) → 1.00 settle</text>
+
+      <line x1="20" y1="120" x2="442" y2="120" stroke="rgba(255,255,255,0.08)"/>
+
+      <text x="20" y="148" fill="#89b4fa" font-size="12" font-weight="700">2. Continuous Page Snap Spring</text>
+      <text x="20" y="168" fill="#cbd5e1" font-size="11" class="mono">stiffness = 180.0 · damping = 19.0</text>
+      <text x="20" y="186" fill="#94a3b8" font-size="11">Fling threshold |v| &gt; 1.2 snaps to neighbor page</text>
+      <text x="20" y="206" fill="#94a3b8" font-size="11">Zero-CPU sleep (100ms poll) when hidden</text>
+    </g>
+  </g>
+
+  <!-- Right Panel: Response Curve -->
+  <g transform="translate(610, 115)">
+    <rect width="520" height="560" rx="18" fill="#0c1220" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+    <rect x="18" y="18" width="484" height="34" rx="8" fill="#151e32"/>
+    <text x="34" y="40" fill="#89b4fa" font-size="12" font-weight="700">STEP RESPONSE &amp; OVERSHOOT BOUNCE</text>
+
+    <!-- Axes -->
+    <line x1="56" y1="420" x2="480" y2="420" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+    <line x1="56" y1="100" x2="56" y2="420" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+
+    <!-- Target 1.00 Line -->
+    <line x1="56" y1="180" x2="480" y2="180" stroke="#89b4fa" stroke-width="1.2" stroke-dasharray="6 5"/>
+    <text x="476" y="170" fill="#89b4fa" font-size="11" class="mono" text-anchor="end">Target = 1.00</text>
+
+    <!-- Overshoot Peak Marker -->
+    <circle cx="176" cy="144" r="5" fill="#00f5d4"/>
+    <text x="188" y="138" fill="#00f5d4" font-size="11" class="mono">Overshoot (~1.025)</text>
+
+    <!-- Underdamped Curve -->
+    <path class="curve" d="M 56 420 C 96 410, 126 144, 176 144 C 222 144, 248 196, 290 192 C 330 188, 355 176, 395 180 L 478 180"
+          fill="none" stroke="url(#springCyan)" stroke-width="3.5" filter="url(#waveGlow)"/>
+
+    <text x="56" y="445" fill="#94a3b8" font-size="11" class="mono">t = 0ms</text>
+    <text x="260" y="445" fill="#94a3b8" font-size="11" class="mono" text-anchor="middle">t = 180ms</text>
+    <text x="476" y="445" fill="#94a3b8" font-size="11" class="mono" text-anchor="end">t = 350ms</text>
+
+    <!-- Formula Box -->
+    <rect x="34" y="472" width="452" height="62" rx="10" fill="#10182b" stroke="rgba(0,245,212,0.3)"/>
+    <text x="260" y="498" fill="#00f5d4" font-size="12" class="mono" font-weight="700" text-anchor="middle">force = -stiffness * (pos - target) - damping * vel</text>
+    <text x="260" y="520" fill="#cbd5e1" font-size="11" class="mono" text-anchor="middle">vel += force * dt;  pos += vel * dt;</text>
+  </g>
+</svg>

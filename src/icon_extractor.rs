@@ -1,9 +1,9 @@
 // Icon extractor with persistent disk caching and high-resolution auto-scaling
+use image::{imageops, RgbaImage};
 use std::collections::hash_map::DefaultHasher;
 use std::fs;
 use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
-use image::{imageops, RgbaImage};
 use windows::core::{ComInterface, HSTRING};
 use windows::Win32::Foundation::HWND;
 use windows::Win32::Graphics::Gdi::{
@@ -11,7 +11,7 @@ use windows::Win32::Graphics::Gdi::{
     DIB_RGB_COLORS, HBITMAP, HDC, HGDIOBJ,
 };
 use windows::Win32::UI::Shell::{
-    SHCreateItemFromParsingName, IShellItem, IShellItemImageFactory, SIIGBF_BIGGERSIZEOK,
+    IShellItem, IShellItemImageFactory, SHCreateItemFromParsingName, SIIGBF_BIGGERSIZEOK,
     SIIGBF_ICONONLY, SIIGBF_SCALEUP,
 };
 
@@ -124,16 +124,29 @@ fn process_and_normalize_icon(img: RgbaImage, target_size: u32) -> RgbaImage {
         for x in 0..w {
             let p = img.get_pixel(x, y);
             if p[3] > 15 {
-                if x < min_x { min_x = x; }
-                if x > max_x { max_x = x; }
-                if y < min_y { min_y = y; }
-                if y > max_y { max_y = y; }
+                if x < min_x {
+                    min_x = x;
+                }
+                if x > max_x {
+                    max_x = x;
+                }
+                if y < min_y {
+                    min_y = y;
+                }
+                if y > max_y {
+                    max_y = y;
+                }
             }
         }
     }
 
     if min_x > max_x || min_y > max_y {
-        return imageops::resize(&img, target_size, target_size, imageops::FilterType::Triangle);
+        return imageops::resize(
+            &img,
+            target_size,
+            target_size,
+            imageops::FilterType::Triangle,
+        );
     }
 
     let crop_w = (max_x - min_x + 1).max(1);
@@ -152,7 +165,10 @@ fn process_and_normalize_icon(img: RgbaImage, target_size: u32) -> RgbaImage {
     let (fit_w, fit_h) = if aspect > 1.0 {
         (inner_target, (inner_target as f32 / aspect).round() as u32)
     } else {
-        (((inner_target as f32) * aspect).round() as u32, inner_target)
+        (
+            ((inner_target as f32) * aspect).round() as u32,
+            inner_target,
+        )
     };
 
     let resized = imageops::resize(
@@ -171,6 +187,10 @@ fn process_and_normalize_icon(img: RgbaImage, target_size: u32) -> RgbaImage {
     canvas
 }
 
+/// Converts a Win32 `HBITMAP` to an unmultiplied RGBA buffer.
+///
+/// # Safety
+/// `hbitmap` must be a valid GDI bitmap handle owned by the caller.
 pub unsafe fn hbitmap_to_rgba(hbitmap: HBITMAP, target_w: u32, target_h: u32) -> Option<RawIcon> {
     let hdc_screen: HDC = GetDC(HWND(0));
     if hdc_screen.0 == 0 {
@@ -214,7 +234,7 @@ pub unsafe fn hbitmap_to_rgba(hbitmap: HBITMAP, target_w: u32, target_h: u32) ->
 
     // Windows returns BGRA, convert to RGBA
     let mut has_non_zero_alpha = false;
-    for chunk in buffer.chunks_exact_mut(4) {
+    for chunk in buffer.as_chunks_mut::<4>().0 {
         let b = chunk[0];
         let r = chunk[2];
         let a = chunk[3];
@@ -229,7 +249,7 @@ pub unsafe fn hbitmap_to_rgba(hbitmap: HBITMAP, target_w: u32, target_h: u32) ->
     // If all alphas are 0, treat pure black (0,0,0) as transparent background
     // and only set alpha = 255 for actual graphic content.
     if !has_non_zero_alpha {
-        for chunk in buffer.chunks_exact_mut(4) {
+        for chunk in buffer.as_chunks_mut::<4>().0 {
             let r = chunk[0];
             let g = chunk[1];
             let b = chunk[2];
