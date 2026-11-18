@@ -4139,7 +4139,7 @@ dependencies = [
  "serde_json",
  "toml",
  "walkdir",
- "windows 0.48.0",
+ "windows 0.52.0",
 ]
 
 [[package]]
