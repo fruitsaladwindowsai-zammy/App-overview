@@ -28,6 +28,23 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 Write-Host "==> Checking GitHub authentication..." -ForegroundColor Cyan
 gh auth status
 
+Write-Host "==> Updating GitHub repository About description, website, and topics..." -ForegroundColor Cyan
+$metaJson = @'
+{
+  "description": "Native Rust Launchpad-style 2D application overview for Windows 10/11 with 4-finger touchpad gestures (Task View suppression), continuous 2-finger page swiping, spring physics, unplated icons, and frosted wallpaper blur.",
+  "homepage": "https://fruitsaladwindowsai-zammy.github.io/App-overview/"
+}
+'@
+$metaJson | gh api --method PATCH "repos/$Repo" --input - | Out-Null
+
+$topicsJson = @'
+{
+  "names": ["windows", "windows-11", "rust", "launchpad", "app-launcher", "touchpad-gestures", "egui", "win32"]
+}
+'@
+$topicsJson | gh api --method PUT "repos/$Repo/topics" --input - | Out-Null
+Write-Host "Updated GitHub About description, homepage, and topics!" -ForegroundColor Green
+
 Write-Host "==> Checking default branch on $Repo..." -ForegroundColor Cyan
 $defaultBranch = gh api "repos/$Repo" --jq ".default_branch"
 Write-Host "Current default branch: $defaultBranch" -ForegroundColor Gray
